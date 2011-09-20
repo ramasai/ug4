@@ -1,6 +1,6 @@
 require 'rake/clean'
 
-CLEAN.include(['*.aux', '*.log', '*.out'])
+CLEAN.include(['*.aux', '*.log', '*.out', '*.pyg'])
 CLOBBER.include('*.pdf')
 
 NAME = "essay"
@@ -12,8 +12,8 @@ task :default => [:build]
 
 desc "Build the document"
 task :build do
-  `#{TEX_EXEC} -shell-escape #{TEX_NAME} 2> /dev/null` 
-  `#{TEX_EXEC} -shell-escape #{TEX_NAME} 2> /dev/null` 
+  `#{TEX_EXEC} -shell-escape #{TEX_NAME} 2> /dev/null`
+  `#{TEX_EXEC} -shell-escape #{TEX_NAME} 2> /dev/null`
 end
 
 desc "Check the document for common errors"
@@ -38,7 +38,7 @@ end
 
 desc "Build the document without ignoring stderr"
 task :syntax do
-  `#{TEX_EXEC} #{TEX_NAME}` 
+  `#{TEX_EXEC} #{TEX_NAME}`
 end
 
 desc "Show the document"
