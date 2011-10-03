@@ -2,11 +2,12 @@
 #include <fstream>
 #include <GL/glut.h>
 #include "demo1.h"
+#include <cstring>
 
 using namespace std;
 
-int nRows = 640;
-int nCols = 480; 
+int nRows = 800;
+int nCols = 600; 
 
 TriangleMesh trig;
 
@@ -79,7 +80,62 @@ void TriangleMesh::loadFile(char * filename)
 	f.close();
 };
 
+void draw_pixel(int x, int y)
+{
+	glBegin(GL_POINTS);	
+		glVertex2i((int)x, (int)y);
+	glEnd();	
+}
 
+void midpoint_line(int x1, int y1, int x2, int y2)
+{
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+
+	int d = 2 * (dy-dx);
+
+	int increE = 2*dy;
+	int incrNE = 2*(dy-dx);
+
+	int x = x1;
+	int y = y1;
+
+	draw_pixel(x, y);
+
+	while (x < x2) {
+		if (d <= 0) {
+			d += increE;
+			x++;
+		} else {
+			d+= incrNE;
+			x++;
+			y++;
+		}
+
+		draw_pixel(x, y);
+	}
+}
+
+void dda_line(int x1, int y1, int x2, int y2)
+{
+	float x,y;
+
+	int dx = x2-x1;
+	int dy = y2-y1;
+
+	int n = max(abs(dx), abs(dy));
+	float dt = n, dxdt = dx/dt, dydt = dy/dt;
+
+	x = x1;
+	y = y1;
+
+	while (n--) {
+		draw_pixel((int)x, (int)y);
+
+		x += dxdt;
+		y += dydt;
+	}
+}
 
 void myDisplay()
 {
@@ -93,7 +149,6 @@ void myDisplay()
 	Vector3f v1,v2, v3;
 
 	glColor3f(1,1,1);  // change the colour of the pixel
-
 
 	//
 	// for all the triangles, get the location of the vertices,
@@ -115,6 +170,16 @@ void myDisplay()
 			glVertex2i((int)v2[0],(int)v2[1]);
 			glVertex2i((int)v3[0],(int)v3[1]);
 		glEnd();	
+	
+		/*
+		dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+		dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+		dda_line((int)v3[0],(int)v3[1], (int)v2[0], (int)v1[1]);
+		*/
+
+		midpoint_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+		midpoint_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+		midpoint_line((int)v3[0],(int)v3[1], (int)v2[0], (int)v1[1]);
 	}
 
 	glFlush();// Output everything
