@@ -87,6 +87,54 @@ void draw_pixel(int x, int y)
 	glEnd();	
 }
 
+void wiki_line(int x0, int y0, int x1, int y1)
+{
+	int dx = abs(x1-x0);
+	int dy = abs(y1-y0);
+
+	int sx, sy;
+	int err = dx - dy;
+
+	if (x0 < x1)
+	{
+		sx = 1;
+	}
+	else
+	{
+		sx = -1;
+	}
+
+	if (y0 < y1)
+	{
+		sy = 1;
+	}
+	else
+	{
+		sy = -1;
+	}
+
+	while(true)
+	{
+		draw_pixel(x0, y0);
+		
+		if (x0 == x1 && y0 == y1) break;
+
+		int e2 = 2 * err;
+
+		if (e2 > -dy)
+		{
+			err = err - dy;
+			x0 = x0 + sx;
+		}
+
+		if (e2 < dx)
+		{
+			err = err + dx;
+			y0 = y0 + sy;
+		}
+	}
+}
+
 void midpoint_line(int x1, int y1, int x2, int y2)
 {
 	int dx = x2 - x1;
@@ -137,6 +185,72 @@ void dda_line(int x1, int y1, int x2, int y2)
 	}
 }
 
+void transform(Vector3f &v,
+		float a, float b, float c, float d,
+		float e, float f, float g, float h,
+		float i, float j, float k, float l,
+		float m, float n, float o, float p)
+{
+	float v1 = v[0];
+	float v2 = v[1];
+	float v3 = v[2];
+	float v4 = 1.0f;
+
+	float ov1 = (v1*a) + (v2*e) + (v3*i) + (v4*m);
+	float ov2 = (v1*b) + (v2*f) + (v3*j) + (v4*n);
+	float ov3 = (v1*c) + (v2*g) + (v3*k) + (v4*o);
+	float ov4 = (v1*d) + (v2*h) + (v3*l) + (v4*p);
+
+	v[0] = ov1/ov4;
+	v[1] = ov2/ov4;
+	v[2] = ov3/ov4;
+}
+
+void translate_vector(Vector3f &v, float x, float y, float z)
+{
+	transform(v,
+			1,0,0,0,
+			0,1,0,0,
+			0,0,1,0,
+			x,y,z,1);
+}
+
+void scale_vector(Vector3f &v, float x, float y, float z)
+{
+	transform(v,
+			x,0,0,0,
+			0,y,0,0,
+			0,0,z,0,
+			0,0,0,1);
+}
+
+void rotate_vector_x(Vector3f &v, float d)
+{
+	transform(v,
+			1,     0,      0,0,
+			0,cos(d),-sin(d),0,
+			0,sin(d), cos(d),0,
+			0,     0,      0,1);
+}
+
+void rotate_vector_y(Vector3f &v, float d)
+{
+	transform(v,
+			cos(d) ,0,sin(d),0,
+			0      ,1,     0,0,
+			-sin(d),0,cos(d),0,
+			0      ,0,     0,1);
+}
+
+void rotate_vector_z(Vector3f &v, float d)
+{
+	transform(v,
+			cos(d),-sin(d),0,0,
+			sin(d),cos(d) ,0,0,
+			0     ,      0,1,0,
+			0     ,      0,0,1);
+}
+
 void myDisplay()
 {
 	glClear(GL_COLOR_BUFFER_BIT); // Clear OpenGL Window
@@ -154,11 +268,39 @@ void myDisplay()
 	// for all the triangles, get the location of the vertices,
 	// project them on the xy plane, and color the corresponding pixel by white
 	//
-
+	
 	for (int i = 0 ; i < trignum; i++)  
 	{
 		/*** do the rasterization of the triangles here using glRecti ***/
 		trig.getTriangleVertices(i, v1,v2,v3);
+		
+		/*
+		translate_vector(v1, 100, 0, 0);
+		translate_vector(v2, 100, 0, 0);
+		translate_vector(v3, 100, 0, 0);
+		*/
+		
+		/*
+		rotate_vector_x(v1, 0.523598);
+		rotate_vector_x(v2, 0.523598);
+		rotate_vector_x(v3, 0.523598);
+		*/
+
+		/*
+		rotate_vector_y(v1, 0.523598);
+		rotate_vector_y(v2, 0.523598);
+		rotate_vector_y(v3, 0.523598);
+		*/
+
+		rotate_vector_z(v1, 0.523598);
+		rotate_vector_z(v2, 0.523598);
+		rotate_vector_z(v3, 0.523598);
+
+		/*
+		scale_vector(v1, 0.5, 0.2, 0.5);
+		scale_vector(v2, 0.5, 0.2, 0.5);
+		scale_vector(v3, 0.5, 0.2, 0.5);
+		*/
 
 		//
 		// colouring the pixels at the vertex location 
@@ -174,12 +316,18 @@ void myDisplay()
 		/*
 		dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
 		dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		dda_line((int)v3[0],(int)v3[1], (int)v2[0], (int)v1[1]);
+		dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
 		*/
 
+		/*
 		midpoint_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
 		midpoint_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		midpoint_line((int)v3[0],(int)v3[1], (int)v2[0], (int)v1[1]);
+		midpoint_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		*/
+
+		wiki_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+		wiki_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+		wiki_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
 	}
 
 	glFlush();// Output everything
