@@ -1,28 +1,28 @@
 \documentclass[12pt, a4paper]{article}
 
 % VARIABLES
-% Change these to your your essay.
+% Change these to your essay.
 \def\thetitle{Dropcycle: A Cloud Infrastructure Problem}
 \def\theauthor{Christopher Brown -- 0824586}
 
 % DOCUMENT LAYOUT
-\usepackage{geometry} 
+\usepackage{geometry}
 % Change this if you have specific margins to use.
 % \geometry{a4paper, hmargin=0.8in}
 
 % HEADERS
 \usepackage{fancyhdr}
 \pagestyle{fancyplain}
-\rhead{\theauthor}
+\rhead{0824586}
 \lhead{\textsc{\thetitle}}
 \setlength{\headheight}{14.5pt}
 
 % HEADINGS
-\usepackage{sectsty} 
-\usepackage[normalem]{ulem} 
-\sectionfont{\rmfamily\mdseries\upshape\Large}
-\subsectionfont{\rmfamily\bfseries\upshape\normalsize} 
-\subsubsectionfont{\rmfamily\mdseries\upshape\normalsize} 
+\usepackage{sectsty}
+\usepackage[normalem]{ulem}
+%\sectionfont{\rmfamily\mdseries\upshape\Large}
+%\subsectionfont{\rmfamily\bfseries\upshape\normalsize}
+%\subsubsectionfont{\rmfamily\mdseries\upshape\normalsize}
 
 % SYMBOLS & MATHS
 \usepackage{amsmath}
@@ -36,8 +36,8 @@
 \usepackage{todonotes}
 
 % PDF SETUP
-\usepackage[bookmarks,colorlinks,breaklinks,pdftitle={\thetitle},pdfauthor={\theauthor}]{hyperref}  
-\hypersetup{linkcolor=black,citecolor=black,filecolor=black,urlcolor=blue} 
+\usepackage[dvipdfm,unicode,bookmarks,colorlinks,breaklinks,pdftitle={\thetitle},pdfauthor={\theauthor}]{hyperref}
+\hypersetup{linkcolor=black,citecolor=black,filecolor=black,urlcolor=blue}
 
 % TITLE PAGE
 \title{\thetitle}
@@ -51,7 +51,50 @@
 
 \section{Introduction}
 
+This essay considers the challenges and problems of the startup
+\emph{Dropcycle} and how they can utilise cloud computing to solve these
+problems in a scalable, effective and cost-efficient manner. The main problem
+that they are trying to solve is the task of migrating processes that are being
+starved of resources from a users computer to a more powerful server in another
+location. They have a number of requirements that add additional challenges to
+the already challenging problem.
+
 \section{Design Considerations}
+
+\emph{Dropcycle} have a number of functional and non-functional requirements
+that are both specified and unspecified. I will address each of these
+throughout the next section and outline a solution to each of them. For ease of
+description I will also assume that the Infrastructure-as-a-service provider
+has similar capabilities to \emph{Amazon Web Services}.
+
+\subsection{Functional Requirements}
+
+The main and specified functional requirement is the migration of starved
+processes from the users local machine to a more powerful server in another
+location. We will assume that the user is able to set limits for the resources
+that they want the process to consume and that the first problem we must solve
+in the work flow is to migrate the process to the remote machine.
+
+Once a process has been marked as being starved of resources then the first
+thing that \emph{Dropcycle} should do is stop it to allow for an easy
+migration. Trying to migrate a live running process is likely to be an exercise
+in futility as the process will change before the new state can be propagated
+to the server. (Besides, the migration of a live running process would be
+a good headline feature for v2.0!). Once the process has been stopped with
+a signal or similar then the next task is to serialise all of the data related
+to that process that would allow it to be reconstructed and restarted again on
+the server. A kernel module in the case of Linux and Macintosh or a driver on
+Windows sits low enough in the operating system that it would be able to get
+this information and pass it to the \emph{Dropcycle} application. This data
+would include the program counter, register state and virtual memory image.
+
+Once this has been completed then the process state information can be
+serialised and sent to the server that that will
+
+different types of process task storage/cpu/memory
+uptime
+recovery
+multi os support
 
 \section{Solutions}
 
