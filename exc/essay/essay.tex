@@ -61,52 +61,111 @@
 
 \section{Introduction}
 
-This essay considers the challenges and problems of the startup
-\emph{Dropcycle} and how they can utilise cloud computing to solve these
-problems in a scalable, effective and cost-efficient manner. The main problem
-that they are trying to solve is the task of migrating processes that are being
-starved of resources from a users computer to a more powerful server in another
-location. They have a number of requirements that add additional challenges to
-the already challenging problem.
+\emph{Dropcycle} is a startup that is planning on using cloud and distributed
+computing to solve the problem of migrating and then running processes from
+a user's machine to a more powerful system. They are aiming to achieve this
+goal in a cost-effective, scalable and effective manner. In this essay the
+author outlines use cases of the service, possible solutions to the overall
+problem with their advantages and disadvantages before outlining the solution
+that would best fit the task at hand.
 
-\section{Design Considerations}
+\section{Use Cases}
 
-\emph{Dropcycle} have a number of functional and non-functional requirements
-that are both specified and unspecified. I will address each of these
-throughout the next section and outline a solution to each of them. For ease of
-description I will also assume that the Infrastructure-as-a-service provider
-has similar capabilities to \emph{Amazon Web Services}.
+The basic premise of \emph{Dropcycle} is to allow the user to select processes
+to be monitored for excessive use of the user's system. When one of these
+processes surpass a calculated or predefined limit then the offending process
+should be migrated to run on a powerful \emph{Dropcycle} server instead. The
+use cases for a service such as this are broad in complexity, scale, and type
+of task. The service should be able to handle as many of these as is
+commercially and functionally viable.
 
-\subsection{Functional Requirements}
+\subsection{Client-side Application}
 
-The main and specified functional requirement is the migration of starved
-processes from the users local machine to a more powerful server in another
-location. We will assume that the user is able to set limits for the resources
-that they want the process to consume and that the first problem we must solve
-in the work flow is to migrate the process to the remote machine.
+The flow through the system always begins with an application running on the
+user's system. The application has a number of important responsibilities in
+the migration process. The first of these is monitoring current processes to
+make sure that they are not consuming more resources than the system can handle
+and therefore starve other processes while crippling themselves. The
+application must monitor a number of attributes of the watched processes to
+achieve this. The three main attributes are the CPU usage, main memory usage,
+and secondary storage usage.
 
-Once a process has been marked as being starved of resources then the first
-thing that \emph{Dropcycle} should do is stop it to allow for an easy
-migration. Trying to migrate a live running process is likely to be an exercise
-in futility as the process will change before the new state can be propagated
-to the server. (Besides, the migration of a live running process would be
-a good headline feature for v2.0!). Once the process has been stopped with
-a signal or similar then the next task is to serialise all of the data related
-to that process that would allow it to be reconstructed and restarted again on
-the server. A kernel module in the case of Linux and Macintosh or a driver on
-Windows sits low enough in the operating system that it would be able to get
-this information and pass it to the \emph{Dropcycle} application. This data
-would include the program counter, register state and virtual memory image.
+Once the client has detected an overrun in once of these areas then it must
+begin it's second responsibility: carrying out an action to remove the load on
+the system so that it can return to normal operation. Most of the time this
+will involve preparing the offending process for migration. However, depending
+on the implementation, in some cases it may be possible to meet this
+responsibility without making the migration. For example, a lack of secondary
+storage may not require the process to migrate due to the ability of some
+implementations (to be discussed later) that could add secondary storage space
+to a running system.
 
-Once this has been completed then the process state information can be
-serialised and sent to the server that that will
+Due to the need to make sure that the process is migrated to the best suited
+machine it is also important for the client to monitor other process attributes
+that may allow for a better understanding of the requirements of the process.
+The client could monitor attributes such as the number of threads and how the
+program is using them. It could monitor the types of files that are open and
+how the process is using them. For example, a movie encoder is a process that
+uses a considerable amount of secondary storage and it will probably have one
+file it is writing to that has a recognisable video file extension.
+\emph{Dropcycle} could use this information to start provisioning more hard
+drive space for the user in the cloud before it is needed to improve the
+customer experience.
 
-different types of process task storage/cpu/memory
-uptime
-recovery
-multi os support
+Depending on the implementation details of the server-side the client may also
+be responsible for other tasks that enable the entire service to function. This
+may involve managing hooks into the user's kernel to help with the sharing of
+memory, mounting of file systems, and helping with inter-process communication.
+Unfortunately, the presence of these responsibilities rely wholly upon the
+implementation of the service and as such this cannot be discussed until after
+the service solution has been defined.
+
+The final responsibility of the client is, rather regrettably, boring from
+a technical standpoint. The user should be able to set per-process limits on
+the resources that the process can use. This information should then be passed
+to the \emph{Dropcycle} servers so that they may enforce these limits.
+
+The client has a number of business requirements that affect it's usage on
+different user systems. Due to the requirement that \emph{Dropcycle} must run
+on the 3 market dominant operating systems of today\footnote{Windows, Mac, and
+Linux} any functionality that is implemented on one of the platforms must be
+ported and possible to implement on the others. Additionally, due to the
+extreme portability of the Linux kernel and its possible inclusion in the
+supported platforms for \emph{Dropcycle}, the application and service should
+take into account the possibility of a wide selection of processor
+architectures to support.
+
+\subsection{Server-side Infrastructure \& Software}
+
+The server side of the service has a number of all technical responsibilities
+that it must handle. However, as with some of the client responsibilities, not
+all of them will be required depending on the implementation of the system.
+
+The first and most obvious of these responsibilities is that the server should
+be able to receive a process from the client application and complete the
+migration so that the process is running again. This has the imposed
+restriction and requirement that the servers must all be running the same
+version of Linux yet they are required to receive a migrated process from
+3 different operating systems spanning countless architectures.
+
+Imposing limits on the resources a process can use is going to be another
+responsibility of the server side. The user is limited by their account and by
+any additional limits they have placed on a process. This will involve
+monitoring the usage of memory and storage space in some way and imposing hard
+and soft limits to the migrated process. The monitoring of CPU usage is largely
+dependent on solution and business decisions. Do we limit the clock speed,
+total number of cycles, both, or another performance metric?
+
+In a similar note, the server will be responsible for the billing component of
+the whole system. \emph{Dropcycle} will need to not just limit the resources
+being used but also keep metrics and logs of what resources were being used in
+order to send people their bill at the end of each month.
+
+%TODO: More server responsibilities
 
 \section{Solutions}
+
+\subsection{Client Application Solutions}
 
 \section{Proposed Solution}
 
