@@ -30,9 +30,9 @@
 % HEADINGS
 \usepackage{sectsty}
 \usepackage[normalem]{ulem}
-%\sectionfont{\rmfamily\mdseries\upshape\Large}
-%\subsectionfont{\rmfamily\bfseries\upshape\normalsize}
-%\subsubsectionfont{\rmfamily\mdseries\upshape\normalsize}
+\sectionfont{\rmfamily\mdseries\upshape\Large}
+\subsectionfont{\rmfamily\bfseries\upshape\normalsize}
+\subsubsectionfont{\rmfamily\mdseries\upshape\normalsize}
 
 % SYMBOLS & MATHS
 \usepackage{amsmath}
@@ -44,6 +44,7 @@
 
 % TODOs
 \usepackage{todonotes}
+\usepackage{cite}
 
 % PDF SETUP
 \usepackage[dvipdfm,unicode,bookmarks,colorlinks,breaklinks,pdftitle={\thetitle},pdfauthor={\theauthor}]{hyperref}
@@ -62,55 +63,53 @@
 \section{Introduction}
 
 \emph{Dropcycle} is a startup that is planning on using cloud and distributed
-computing to solve the problem of migrating and then running processes from
-a user's machine to a more powerful system. They are aiming to achieve this
-goal in a cost-effective, scalable and effective manner. In this essay the
-author outlines use cases of the service, possible solutions to the overall
-problem with their advantages and disadvantages before outlining the solution
-that would best fit the task at hand.
+computing to solve the problem of migrating and then running processes from a
+user's machine to a more powerful system. They are aiming to achieve this goal
+in a cost-effective, scalable and effective manner. In this essay the author
+outlines use cases of the service, possible solutions to the overall problem
+with their advantages and disadvantages before outlining the solution that would
+best fit the task at hand.
 
 \section{Use Cases}
 
 The basic premise of \emph{Dropcycle} is to allow the user to select processes
 to be monitored for excessive use of the user's system. When one of these
 processes surpass a calculated or predefined limit then the offending process
-should be migrated to run on a powerful \emph{Dropcycle} server instead. The
-use cases for a service such as this are broad in complexity, scale, and type
-of task. The service should be able to handle as many of these as is
-commercially and functionally viable.
+should be migrated to run on a powerful \emph{Dropcycle} server instead. The use
+cases for a service such as this are broad in complexity, scale, and type of
+task. The service should be able to handle as many of these as is commercially
+and functionally viable.
 
 \subsection{Client-side Application}
 
 The flow through the system always begins with an application running on the
-user's system. The application has a number of important responsibilities in
-the migration process. The first of these is monitoring current processes to
-make sure that they are not consuming more resources than the system can handle
-and therefore starve other processes while crippling themselves. The
-application must monitor a number of attributes of the watched processes to
-achieve this. The three main attributes are the CPU usage, main memory usage,
-and secondary storage usage.
+user's system. The application has a number of important responsibilities in the
+migration process. The first of these is monitoring current processes to make
+sure that they are not consuming more resources than the system can handle and
+therefore starve other processes while crippling themselves. The application
+must monitor a number of attributes of the watched processes to achieve this.
+The three main attributes are the CPU usage, main memory usage, and secondary
+storage usage.
 
 Once the client has detected an overrun in once of these areas then it must
 begin it's second responsibility: carrying out an action to remove the load on
-the system so that it can return to normal operation. Most of the time this
-will involve preparing the offending process for migration. However, depending
-on the implementation, in some cases it may be possible to meet this
-responsibility without making the migration. For example, a lack of secondary
-storage may not require the process to migrate due to the ability of some
-implementations (to be discussed later) that could add secondary storage space
-to a running system.
+the system so that it can return to normal operation. Most of the time this will
+involve preparing the offending process for migration. However, depending on the
+implementation, in some cases it may be possible to meet this responsibility
+without making the migration. For example, a lack of secondary storage may not
+require the process to migrate due to the ability of some implementations (to be
+discussed later) that could add secondary storage space to a running system.
 
 Due to the need to make sure that the process is migrated to the best suited
 machine it is also important for the client to monitor other process attributes
 that may allow for a better understanding of the requirements of the process.
 The client could monitor attributes such as the number of threads and how the
-program is using them. It could monitor the types of files that are open and
-how the process is using them. For example, a movie encoder is a process that
-uses a considerable amount of secondary storage and it will probably have one
-file it is writing to that has a recognisable video file extension.
-\emph{Dropcycle} could use this information to start provisioning more hard
-drive space for the user in the cloud before it is needed to improve the
-customer experience.
+program is using them. It could monitor the types of files that are open and how
+the process is using them. For example, a movie encoder is a process that uses
+a considerable amount of secondary storage and it will probably have one file
+it is writing to that has a recognisable video file extension. \emph{Dropcycle}
+could use this information to start provisioning more hard drive space for the
+user in the cloud before it is needed to improve the customer experience.
 
 Depending on the implementation details of the server-side the client may also
 be responsible for other tasks that enable the entire service to function. This
@@ -120,20 +119,20 @@ Unfortunately, the presence of these responsibilities rely wholly upon the
 implementation of the service and as such this cannot be discussed until after
 the service solution has been defined.
 
-The final responsibility of the client is, rather regrettably, boring from
-a technical standpoint. The user should be able to set per-process limits on
-the resources that the process can use. This information should then be passed
-to the \emph{Dropcycle} servers so that they may enforce these limits.
+The final responsibility of the client is, rather regrettably, boring from a
+technical standpoint. The user should be able to set per-process limits on the
+resources that the process can use. This information should then be passed to
+the \emph{Dropcycle} servers so that they may enforce these limits.
 
 The client has a number of business requirements that affect it's usage on
 different user systems. Due to the requirement that \emph{Dropcycle} must run
 on the 3 market dominant operating systems of today\footnote{Windows, Mac, and
 Linux} any functionality that is implemented on one of the platforms must be
-ported and possible to implement on the others. Additionally, due to the
-extreme portability of the Linux kernel and its possible inclusion in the
-supported platforms for \emph{Dropcycle}, the application and service should
-take into account the possibility of a wide selection of processor
-architectures to support.
+ported and possible to implement on the others. Additionally, due to the extreme
+portability of the Linux kernel and its possible inclusion in the supported
+platforms for \emph{Dropcycle}, the application and service should take into
+account the possibility of a wide selection of processor architectures to
+support.
 
 \subsection{Server-side Infrastructure \& Software}
 
@@ -143,18 +142,18 @@ all of them will be required depending on the implementation of the system.
 
 The first and most obvious of these responsibilities is that the server should
 be able to receive a process from the client application and complete the
-migration so that the process is running again. This has the imposed
-restriction and requirement that the servers must all be running the same
-version of Linux yet they are required to receive a migrated process from
-3 different operating systems spanning countless architectures.
+migration so that the process is running again. This has the imposed restriction
+and requirement that the servers must all be running the same version of Linux
+yet they are required to receive a migrated process from 3 different operating
+systems spanning countless architectures.
 
 Imposing limits on the resources a process can use is going to be another
-responsibility of the server side. The user is limited by their account and by
-any additional limits they have placed on a process. This will involve
+responsibility of the server side. The user is limited by their account and
+by any additional limits they have placed on a process. This will involve
 monitoring the usage of memory and storage space in some way and imposing hard
 and soft limits to the migrated process. The monitoring of CPU usage is largely
-dependent on solution and business decisions. Do we limit the clock speed,
-total number of cycles, both, or another performance metric?
+dependent on solution and business decisions. Do we limit the clock speed, total
+number of cycles, both, or another performance metric?
 
 In a similar note, the server will be responsible for the billing component of
 the whole system. \emph{Dropcycle} will need to not just limit the resources
@@ -167,8 +166,259 @@ order to send people their bill at the end of each month.
 
 \subsection{Client Application Solutions}
 
+The first responsibility of the client, detecting high resource usage of
+processes is a largely solved problem. System utilities such as \texttt{top}
+and \texttt{ps} allow the user to gather information on processes. The client
+application could accomplish the same task by either reading from the
+\texttt{/proc} filesystem on Linux, making the \texttt{task\_info()} system
+call on Macintosh, or using the Process Status API
+(PSAPI)\footnote{\url{http://msdn.microsoft.com/en-us/library/ms684884(VS.85).aspx}}
+in Windows. To monitor the secondary storage usage of a process we can monitor
+the changes in file size of all of the open file handles that the process has.
+
+Unfortunately, while this may catch the majority of processes that are using
+a large amount of resources, there are some edge cases where this falls down.
+For example, a process could create many child worker processes that would not
+have their CPU usage obviously associated with their parent. To get around this
+we just need to add a child's CPU usage to it's parent recursively to get the
+total amount of CPU usage. Another problem might occur with processes that open
+and close files rapidly. As such, the file might not appear in the file handle
+table when we scan it for entries. To combat this the best we can do is
+increase the regularity of the checks, sandbox any file access from that
+process into an environment that can be monitored easily.
+
+The next challenge is the mechanism by which we migrate the process from the
+client to the server. Process migration is a complex task mainly due to the
+fact that adding it to a kernel that was only designed for stand alone use is
+difficult and often impossible~\cite{Milojicic1999}. However, some tools do
+exist that make the task easier.
+\emph{CryoPID}\footnote{\url{http://cryopid.berlios.de/}} is a tool for Linux
+that allows the user to save the state of a process to a file to be resumed at
+a later date. A similar method could be employed in \emph{Dropcycle} by sending
+this created file to the server where it would be resumed there. This would
+have a number of caveats which would mean that additional steps would need to
+be taken to make it work: any file handles that were open would have to be
+moved to the server too and any open sockets will have to be recreated there
+too.
+
+\subsection{Client to Cloud Communication Solutions}
+
+In migrating the process from one machine to another many of the ``links'' that
+another process on the user's machine had to the recently evicted process will
+be severed that may cause an error. The inverse direction will also have
+a similar problem as the migrated process tries to communicate with objects
+that were once on the same local machine as it. There are a number of these
+``links'' that are essential to consider if we are to make a complete service:
+
+\subsubsection{Filesystem}
+
+There are a number of different problems to solve about how the system should
+interact with files. When the process moves it should bring the files that it
+has open with it as they are most likely to still be in active use. There are
+also the challenges of keeping consistency between the files stored on the
+server and on the client. The simplest way of doing this would be to use
+a Distributed Filesystem (DFS) such as Andrew Filesystem (AFS) or Network
+Filesystem (NFS). This would allow the filesystem to be mounted on the user's
+computer too and that will allow the user (or the programs they are running) to
+interact with the same view of the filesystem as the program running on
+\emph{Dropcycle}.
+
+\subsubsection{Inter-Process Communication}
+
+There are 5 different types of inter-process communication that
+\emph{Dropcycle} will need to be able to handle.
+
+\begin{description}
+
+	\item[Files] \\
+
+	We have already discussed how we can use a DFS to manage the access of
+	files that are required on both sides of the link. This solution will
+	also allow for using files for interprocess communication.
+
+	\item[Pipes] \\
+
+	% TODO: Pipes
+
+	\item[Signals] \\
+
+	Signals allow for a basic method of IPC by allowing a process to send
+	a simple, small set of messages to one another. To do this all they require
+	is the process ID (PID) of the process that they wish to send a message to. To
+	allow this in \emph{Dropcycle} we need to take a different approach
+	depending on which direction we are sending signals in.
+
+	If we are sending signals from the cloud back to the user then we are able
+	to catch those signals with a kernel modification (which should be possible
+	as we are able to easily control the kernel of our own machines) and then
+	send the command to the client to tell it to send the same signal on the
+	user's machine.
+
+	Inversely, if a program on the user's machine wants to send
+	a command to a process that has been migrated to the cloud then things get
+	a bit more tricky. Since we are unable to intercept signals that are not
+	sent to our process (the \emph{Dropcycle} client process) we cannot relay
+	any signals that are sent to the stopped, migrated process to it's clone in
+	the cloud. We are also not able to kill the stopped, migrated process that
+	is still on the user's computer and take it's PID to intercept these
+	signals because modern kernels do not let a new process choose it's PID\@. It
+	may be possible to patch this into the user's kernel in the case of Linux
+	but on Windows and Macintosh this is not possible and as such is not an
+	acceptable solution.
+
+	This is one of the cases where there is not satisfactory answer and the problem
+	remains unsolved.
+
+	\item[Network Sockets] \\
+
+	In many ways the solution to using IPC with sockets is similar to that of
+	signals. We are able to modify the kernel of our own servers to intercept
+	outgoing socket requests and pass them on to the client application to
+	relay on.
+
+	However, unlike signals we are able to intercept outgoing packets to sockets
+	on the client side by adding firewall rules to reroute these requests back to
+	the client application for further forwarding.
+
+	\item[Shared Memory] \\
+
+	Shared memory is a simple way of sharing information between processes. If
+	both of the processes that are sharing memory are on the same machine then
+	this problem is easy to solve. However, once the processes are on separate
+	machines this becomes far more challenging. To this end, if two processes
+	are required to share memory then they should both be sent to the cloud
+	together to be run on the same machine.
+
+\end{description}
+
+The requirement that the user be able to communicate and manipulate the process
+as if it was local is a challenging and possibly impossible goal. This is due
+to some of the issues that have been discussed above (such as outbound
+signals). However, a compromise can be found if we create a simple command line
+application that will translate the PID of the stopped, migrated process on the
+client to the remote instance and process that is running in the cloud. For
+example, a program called \texttt{dropcycle} could be appended to any of the
+\emph{coreutils} programs that interact with processes. For example,
+\texttt{dropbox ps} will list the remote processes and \texttt{dropbox kill
+123} would end the remote process 123.
+
+One of the important requirements set is that the software should work on
+Windows, Macintosh and Linux. The obvious solution to this problem is to use
+virtualisation in the cloud to be able to run processes from any Operating
+System. This will work for both Windows and Linux as they can be virtualised
+without legal issues. However, Macintosh has a clause in the EULA that means it
+cannot be virtualised on any hardware that isn't made by Apple. There are two
+solutions to this problem: we partition off the Mac processes from the rest of
+the machines and buy specific Apple hardware. The disadvantage of this is that
+we must go against our specification and divide the operating systems that we
+run. Another solution would be to just put the servers in Denmark where EULAs
+carry no legal weight.
+
+Another one of the requirements was to allow the user to limit the resources
+available to a process. This conveniently ties into the billing aspect of the
+system too as they are both about monitoring the resources used. We're able to
+easily impose limits on hard drive space used and as for memory and CPU usage
+both of these can be limited with a tool such as Linux's
+\texttt{cgroups}\footnote{\url{http://www.kernel.org/doc/Documentation/cgroups/cgroups.txt}}.
+
 \section{Proposed Solution}
 
+\subsection{Unknowns}
+
+There are several unknowns with this problem that have no clear solution. One
+of these is the situation in which the user has powered off their computer
+while a process is still running on \emph{Dropcycle}. In this case the simplest
+and elected solution would be to just stop all of the remote processes until
+the user's computer is started again. This would allow the server to be shut
+down to reduce unwanted and unneeded costs.
+
+\subsection{Infrastructure}
+
+Up until this point the author has mainly discussed the technical challenges
+without discussing the actual infrastructure that this will run on. This is due
+to the fact that it is impossible to decide on this until the proposed software
+solution is decided. Now that it has been decided we can start to look at how
+to deploy this.
+
+There are going to be many different machine types in the infrastructure. These
+can be broadly split into machines that supervise other machines (supervisors)
+and disposable machines that perform the user's computation (workers). The
+workers will form the majority of the machines in the cluster. In order to
+exploit the near-instant scalability of the cloud we should be able to spin up
+new worker instances on short notice to cope with any increase in the amount of
+processes migrated to \emph{Dropcycle}.
+
+When a process is migrated to \emph{Dropcycle} a small redundant, load balanced
+supervisor cluster will receive the frozen process slug along with any open
+files from the client machine. From here this cluster needs to decide which
+worker supervisor this process should be sent to. This decision could be based
+on any number of factors such as:
+
+\begin{itemize}
+
+	\item
+
+	User processes that are already running on the cluster should influence
+	where the new process is placed. Where possible the process should be
+	placed on the same supervisor to simplify any machine communication between
+	them. In some cases we may also want to place processes on the same VM as
+	each other to allow certain kinds of IPC.
+
+	\item
+
+	The system should try and place the user's process as close to them
+	geographically as possible. This will decrease latency between the user and
+	their processes.
+
+	\item
+
+	The supervisor should have a machine of the type that the user needs
+	available. They type of machine that a process needs depends on whether it
+	is CPU or memory intensive and then how intensive it is. There is no need
+	to waste money on spawning a very powerful machine if it is not needed.
+
+\end{itemize}
+
+Ideally, the supervisors should spin up more virtual machines before they are
+needed as they can take a few minutes to create and this delay is a terrible
+user experience. If our machines are spread out in data centers around the
+world then we should be able to preempt certain timezones waking up and prepare
+for the large fluctuation and then power down many of our machines when
+a timezone goes to sleep.
+
+Due to the nature of our process migration strategy there is a convenient
+solution to dealing with failures of instances. Our process migration strategy
+involves taking a snapshot of the running process and serialising it for later
+use. This has the useful side effect of allowing us to restart the process from
+the beginning if the machine happens to fail. Unfortunately this provides
+a rather poor user experience as a user may lose a lot of computation if this
+happens. A middle ground would be if we carry out the same process
+serialisation that we perform for the migration every few minutes and send that
+to the supervisor. If the supervisor doesn't receive one of these ``heartbeat''
+messages within a certain time frame then it should mark the worker as broken
+and begin the process again from the last checkpoint on a working machine.
+Using a journaled filesystem we can rollback any changes to related files to
+the point where the snapshot was taken.
+
+%TODO: DFS
+
+% Cost Analysis
+
+% Computer Turned Off
+
 \section{Conclusion}
+
+The concept behind \emph{Dropcycle} is an interesting but flawed idea. While it
+may be possible for a simple proof of concept to be made that will migrate
+a process to the cloud. However, once even a small deviation from simplicity
+happens the service will fall down. On top of this, there is no real need for
+a middle ground between the ability to run something locally and the ability to
+spin up a very large \textsc{Ec2} instance to run the process. In many cases no
+modifications will need to be made to the executable for this to happen. This
+makes \emph{Dropcycle} not needed, not practical and in some cases not even
+possible.
+
+\bibliography{exc}{}
+\bibliographystyle{plain}
 
 \end{document}
