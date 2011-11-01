@@ -17,9 +17,10 @@ task "" do end
 
 file PDF_NAME => [TEX_NAME, IMAGES] do
   puts "Building the PDF... [#{TEX_NAME} => #{PDF_NAME}]"
-  2.times do
-    latex "-shell-escape", "-interaction=nonstopmode", TEX_NAME
-  end
+  latex "-shell-escape", "-interaction=nonstopmode", TEX_NAME
+  `bibtex #{NAME}`
+  latex "-shell-escape", "-interaction=nonstopmode", TEX_NAME
+  latex "-shell-escape", "-interaction=nonstopmode", TEX_NAME
 end
 
 task :default => [:build]
