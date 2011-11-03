@@ -2,8 +2,8 @@ CXX := g++
 LIBS := -lglut -lGLU -lGL
 
 # Linking
-demo1: demo1.o
-	$(CXX) $(LIBS) -o demo1
+viewer: viewer.o
+	$(CXX) $(LIBS) -o viewer
 
-demo1.o: demo1.cc
-	$(CXX) $(LIBS) -c demo1.cc
+%.o: %.cc
+	$(CXX) $(LIBS) -c $(input) -o $(output)

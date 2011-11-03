@@ -1,13 +1,14 @@
 #include <iostream>
 #include <fstream>
 #include <GL/glut.h>
-#include "demo1.h"
 #include <cstring>
+
+#include "viewer.h"
 
 using namespace std;
 
 int nRows = 800;
-int nCols = 600; 
+int nCols = 600;
 
 TriangleMesh trig;
 
@@ -34,10 +35,10 @@ void TriangleMesh::loadFile(char * filename)
 
 	while (!f.eof()) {
 		    f.getline(buf, sizeof(buf));
-		    sscanf(buf, "%s", header);  
+		    sscanf(buf, "%s", header);
 
 		    if (strcmp(header, "v") == 0) {
-			sscanf(buf, "%s %f %f %f", header, &x, &y, &z);  
+			sscanf(buf, "%s %f %f %f", header, &x, &y, &z);
 
 		//	x *= 1000; y *= 1000; z *= 1000;
 
@@ -56,7 +57,7 @@ void TriangleMesh::loadFile(char * filename)
 		    }
 		    else if (strcmp(header, "f") == 0) {
 			sscanf(buf, "%s %d %d %d", header, &v1, &v2, &v3);
-			
+
 			Triangle trig(v1-1, v2-1, v3-1);
 			_trig.push_back(trig);
 
@@ -66,15 +67,15 @@ void TriangleMesh::loadFile(char * filename)
 	_xmin = xmin; _ymin = ymin; _zmin = zmin;
 	_xmax = xmax; _ymax = ymax; _zmax = zmax;
 
-	float range; 
+	float range;
 	if (xmax-xmin > ymax-ymin) range = xmax-xmin;
 	else range = ymax-ymin;
 
 	for (int j = 0; j < 3; j++) av[j] /= _v.size();
 
-	for (int i = 0; i < _v.size(); i++) 
+	for (int i = 0; i < _v.size(); i++)
 	{
-		for (int j = 0; j < 3; j++) _v[i][j] = (_v[i][j]-av[j])/range*400;  
+		for (int j = 0; j < 3; j++) _v[i][j] = (_v[i][j]-av[j])/range*400;
 	}
 	cout << "trig " << _trig.size() << " vertices " << _v.size() << endl;
 	f.close();
@@ -82,9 +83,9 @@ void TriangleMesh::loadFile(char * filename)
 
 void draw_pixel(int x, int y)
 {
-	glBegin(GL_POINTS);	
+	glBegin(GL_POINTS);
 		glVertex2i((int)x, (int)y);
-	glEnd();	
+	glEnd();
 }
 
 void wiki_line(int x0, int y0, int x1, int y1)
@@ -116,7 +117,7 @@ void wiki_line(int x0, int y0, int x1, int y1)
 	while(true)
 	{
 		draw_pixel(x0, y0);
-		
+
 		if (x0 == x1 && y0 == y1) break;
 
 		int e2 = 2 * err;
@@ -268,18 +269,18 @@ void myDisplay()
 	// for all the triangles, get the location of the vertices,
 	// project them on the xy plane, and color the corresponding pixel by white
 	//
-	
-	for (int i = 0 ; i < trignum; i++)  
+
+	for (int i = 0 ; i < trignum; i++)
 	{
 		/*** do the rasterization of the triangles here using glRecti ***/
 		trig.getTriangleVertices(i, v1,v2,v3);
-		
+
 		/*
 		translate_vector(v1, 100, 0, 0);
 		translate_vector(v2, 100, 0, 0);
 		translate_vector(v3, 100, 0, 0);
 		*/
-		
+
 		/*
 		rotate_vector_x(v1, 0.523598);
 		rotate_vector_x(v2, 0.523598);
@@ -303,16 +304,16 @@ void myDisplay()
 		*/
 
 		//
-		// colouring the pixels at the vertex location 
-		// (just doing parallel projectiion to the xy plane. 
-		// only use glBegin(GL_POINTS) for rendering the scene  
+		// colouring the pixels at the vertex location
+		// (just doing parallel projectiion to the xy plane.
+		// only use glBegin(GL_POINTS) for rendering the scene
 		//
-		glBegin(GL_POINTS);	
+		glBegin(GL_POINTS);
 			glVertex2i((int)v1[0],(int)v1[1]);
 			glVertex2i((int)v2[0],(int)v2[1]);
 			glVertex2i((int)v3[0],(int)v3[1]);
-		glEnd();	
-	
+		glEnd();
+
 		/*
 		dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
 		dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
