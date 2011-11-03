@@ -3,7 +3,7 @@ LIBS := -lglut -lGLU -lGL
 
 # Linking
 viewer: viewer.o
-	$(CXX) $(LIBS) -o viewer
+	$(CXX) $(LIBS) viewer.o -o viewer
 
 %.o: %.cc
-	$(CXX) $(LIBS) -c $(input) -o $(output)
+	$(CXX) $(LIBS) -c $< -o $@
