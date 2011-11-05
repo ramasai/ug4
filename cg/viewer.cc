@@ -399,7 +399,7 @@ int main(int argc, char **argv)
 	int width, height;
 	glutInit(&argc, argv);
 	glutInitWindowSize(nRows, nCols);
-	glutCreateWindow("SimpleExample");
+	glutCreateWindow("Model Viewer");
 	gluOrtho2D(-nRows/2, nRows/2, -(float)nCols/2,  (float)nCols/2);
 	glutDisplayFunc(display);// Callback function
 	glutKeyboardUpFunc(keyboard);
