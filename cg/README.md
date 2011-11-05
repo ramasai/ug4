@@ -19,3 +19,7 @@ There are a number of keyboard controls that you can use to manipulate the objec
 * Up/Down/Left/Right Arrow = Rotate the Object
 * W/A/S/D = Translate the object
 * Z/X = Zoom Out/In
+
+## Evidence that the Program Runs
+
+A screenshot of the program's output can be found in the file `teapot.png`.
