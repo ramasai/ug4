@@ -257,18 +257,6 @@ void display()
 	for (int i = 0 ; i < trignum; i++)
 	{
 		/*** do the rasterization of the triangles here using glRecti ***/
-		if ()
-		{
-			dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-			dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-			dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		}
-		else
-		{
-			bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-			bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-			bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		}
 		trig.getTriangleVertices(i, v1,v2,v3);
 
 		translate_vector(v1, translation_x, translation_y, 0);
