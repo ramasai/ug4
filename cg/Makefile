@@ -1,8 +1,7 @@
 CXX := g++
 LIBS := -lglut -lGLU -lGL
-OPTIONS := -O3
+OPTS := -O3
 
-# Linking
 viewer: viewer.o
 	$(CXX) $(OPTS) $(LIBS) viewer.o -o viewer
 
