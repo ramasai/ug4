@@ -1,7 +1,0 @@
-#compiling the demo program:
-g++ -o demo1 demo1.cc -lglut -lGLU -lGL
-
-
-# running the program
-
-./demo1 MIT_teapot.obj 

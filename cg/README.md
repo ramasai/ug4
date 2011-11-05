@@ -19,6 +19,7 @@ There are a number of keyboard controls that you can use to manipulate the objec
 * Up/Down/Left/Right Arrow = Rotate the Object
 * W/A/S/D = Translate the object
 * Z/X = Zoom Out/In
+* Space Bar = Change Line Drawing Algorithm
 
 ## Evidence that the Program Runs
 
