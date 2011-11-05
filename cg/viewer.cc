@@ -1,3 +1,9 @@
+/**
+ * Not implemented:
+ *
+ *  - Antialiasing
+ *  - Perspective transformation
+ */
 #include <iostream>
 #include <fstream>
 #include <GL/glut.h>
@@ -18,6 +24,8 @@ float scale = 1.0f;
 float rotation_x = 0;
 float rotation_y = 0;
 float rotation_z = 0;
+
+bool dda = false;
 
 TriangleMesh trig;
 
@@ -89,14 +97,20 @@ void TriangleMesh::loadFile(char * filename)
 	f.close();
 };
 
-void draw_pixel(int x, int y)
+/**
+ * Draws a pixel at the coordinate (x,y).
+ */
+inline void draw_pixel(int x, int y)
 {
 	glBegin(GL_POINTS);
 		glVertex2i((int)x, (int)y);
 	glEnd();
 }
 
-void wiki_line(int x0, int y0, int x1, int y1)
+/*
+ * Draws a line using the Midpoint line algorithm from (x0,y0) to (x1,y1).
+ */
+void bresenhams_line(int x0, int y0, int x1, int y1)
 {
 	int dx = abs(x1-x0);
 	int dy = abs(y1-y0);
@@ -104,23 +118,8 @@ void wiki_line(int x0, int y0, int x1, int y1)
 	int sx, sy;
 	int err = dx - dy;
 
-	if (x0 < x1)
-	{
-		sx = 1;
-	}
-	else
-	{
-		sx = -1;
-	}
-
-	if (y0 < y1)
-	{
-		sy = 1;
-	}
-	else
-	{
-		sy = -1;
-	}
+	sx = (x0 < x1) ? 1 : -1;
+	sy = (y0 < y1) ? 1 : -1;
 
 	while(true)
 	{
@@ -144,35 +143,9 @@ void wiki_line(int x0, int y0, int x1, int y1)
 	}
 }
 
-void midpoint_line(int x1, int y1, int x2, int y2)
-{
-	int dx = x2 - x1;
-	int dy = y2 - y1;
-
-	int d = 2 * (dy-dx);
-
-	int increE = 2*dy;
-	int incrNE = 2*(dy-dx);
-
-	int x = x1;
-	int y = y1;
-
-	draw_pixel(x, y);
-
-	while (x < x2) {
-		if (d <= 0) {
-			d += increE;
-			x++;
-		} else {
-			d+= incrNE;
-			x++;
-			y++;
-		}
-
-		draw_pixel(x, y);
-	}
-}
-
+/*
+ * Draws a line using the DDA line algorithm from (x0,y0) to (x1,y1).
+ */
 void dda_line(int x1, int y1, int x2, int y2)
 {
 	float x,y;
@@ -194,6 +167,9 @@ void dda_line(int x1, int y1, int x2, int y2)
 	}
 }
 
+/**
+ * Transforms a vector using the transformation matrix (a-p)
+ */
 void transform(Vector3f &v,
 		float a, float b, float c, float d,
 		float e, float f, float g, float h,
@@ -281,6 +257,18 @@ void display()
 	for (int i = 0 ; i < trignum; i++)
 	{
 		/*** do the rasterization of the triangles here using glRecti ***/
+		if ()
+		{
+			dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+			dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+			dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		}
+		else
+		{
+			bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+			bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+			bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		}
 		trig.getTriangleVertices(i, v1,v2,v3);
 
 		translate_vector(v1, translation_x, translation_y, 0);
@@ -316,21 +304,18 @@ void display()
 			glVertex2i((int)v3[0],(int)v3[1]);
 		glEnd();
 
-		/*
-		dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-		dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		*/
-
-		/*
-		midpoint_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-		midpoint_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		midpoint_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		*/
-
-		wiki_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-		wiki_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		wiki_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		if (dda)
+		{
+			dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+			dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+			dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		}
+		else
+		{
+			bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+			bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+			bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		}
 	}
 
 	glFlush();// Output everything
@@ -381,6 +366,8 @@ void keyboard(unsigned char key, int x, int y)
 		case 'x':
 			scale += 0.1;
 			break;
+		case ' ':
+			dda = !dda;
 	}
 
 	display();
