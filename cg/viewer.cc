@@ -10,12 +10,20 @@ using namespace std;
 int nRows = 800;
 int nCols = 600;
 
+int translation_x = 0;
+int translation_y = 0;
+
+float scale = 1.0f;
+
+float rotation_x = 0;
+float rotation_y = 0;
+float rotation_z = 0;
+
 TriangleMesh trig;
 
 void TriangleMesh::loadFile(char * filename)
 {
 	ifstream f(filename);
-
 
 	if (f == NULL) {
 		cerr << "failed reading polygon data file " << filename << endl;
@@ -252,7 +260,7 @@ void rotate_vector_z(Vector3f &v, float d)
 			0     ,      0,0,1);
 }
 
-void myDisplay()
+void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT); // Clear OpenGL Window
 
@@ -261,7 +269,7 @@ void myDisplay()
 	/*** clear the Zbuffer here ****/
 
 	int trignum = trig.trigNum();
-	Vector3f v1,v2, v3;
+	Vector3f v1,v2,v3;
 
 	glColor3f(1,1,1);  // change the colour of the pixel
 
@@ -275,33 +283,27 @@ void myDisplay()
 		/*** do the rasterization of the triangles here using glRecti ***/
 		trig.getTriangleVertices(i, v1,v2,v3);
 
-		/*
-		translate_vector(v1, 100, 0, 0);
-		translate_vector(v2, 100, 0, 0);
-		translate_vector(v3, 100, 0, 0);
-		*/
+		translate_vector(v1, translation_x, translation_y, 0);
+		translate_vector(v2, translation_x, translation_y, 0);
+		translate_vector(v3, translation_x, translation_y, 0);
+
+		rotate_vector_x(v1, rotation_x);
+		rotate_vector_x(v2, rotation_x);
+		rotate_vector_x(v3, rotation_x);
+
+		rotate_vector_y(v1, rotation_y);
+		rotate_vector_y(v2, rotation_y);
+		rotate_vector_y(v3, rotation_y);
 
 		/*
-		rotate_vector_x(v1, 0.523598);
-		rotate_vector_x(v2, 0.523598);
-		rotate_vector_x(v3, 0.523598);
-		*/
-
-		/*
-		rotate_vector_y(v1, 0.523598);
-		rotate_vector_y(v2, 0.523598);
-		rotate_vector_y(v3, 0.523598);
-		*/
-
 		rotate_vector_z(v1, 0.523598);
 		rotate_vector_z(v2, 0.523598);
 		rotate_vector_z(v3, 0.523598);
-
-		/*
-		scale_vector(v1, 0.5, 0.2, 0.5);
-		scale_vector(v2, 0.5, 0.2, 0.5);
-		scale_vector(v3, 0.5, 0.2, 0.5);
 		*/
+
+		scale_vector(v1, scale, scale, scale);
+		scale_vector(v2, scale, scale, scale);
+		scale_vector(v3, scale, scale, scale);
 
 		//
 		// colouring the pixels at the vertex location
@@ -334,6 +336,55 @@ void myDisplay()
 	glFlush();// Output everything
 }
 
+void keyboardSpecial(int key, int x, int y)
+{
+	switch (key)
+	{
+		case GLUT_KEY_UP:
+			rotation_x += 0.05;
+			break;
+		case GLUT_KEY_LEFT:
+			rotation_y += 0.05;
+			break;
+		case GLUT_KEY_DOWN:
+			rotation_x -= 0.05;
+			break;
+		case GLUT_KEY_RIGHT:
+			rotation_y -= 0.05;
+			break;
+	}
+
+	display();
+}
+
+void keyboard(unsigned char key, int x, int y)
+{
+	cout << "Key pressed: " << key << " - " << (int)key << " (" << x << "," << y << ")" << endl;
+
+	switch (key)
+	{
+		case 'w':
+			translation_y += 10;
+			break;
+		case 'a':
+			translation_x -= 10;
+			break;
+		case 's':
+			translation_y -= 10;
+			break;
+		case 'd':
+			translation_x += 10;
+			break;
+		case 'z':
+			scale += 0.1;
+			break;
+		case 'x':
+			scale -= 0.1;
+			break;
+	}
+
+	display();
+}
 
 int main(int argc, char **argv)
 {
@@ -350,6 +401,8 @@ int main(int argc, char **argv)
 	glutInitWindowSize(nRows, nCols);
 	glutCreateWindow("SimpleExample");
 	gluOrtho2D(-nRows/2, nRows/2, -(float)nCols/2,  (float)nCols/2);
-	glutDisplayFunc(myDisplay);// Callback function
+	glutDisplayFunc(display);// Callback function
+	glutKeyboardUpFunc(keyboard);
+	glutSpecialUpFunc(keyboardSpecial);
 	glutMainLoop();// Display everything and wait
 }
