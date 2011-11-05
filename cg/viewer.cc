@@ -376,10 +376,10 @@ void keyboard(unsigned char key, int x, int y)
 			translation_x += 10;
 			break;
 		case 'z':
-			scale += 0.1;
+			scale -= 0.1;
 			break;
 		case 'x':
-			scale -= 0.1;
+			scale += 0.1;
 			break;
 	}
 
