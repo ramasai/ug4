@@ -11,14 +11,9 @@ using namespace std;
 // Sample code for physics simulation
 //
 
-
-// Implements cloth simulation
-
-
 class Vector3f;
 class Triangle;
 class TriangleMesh;
-
 
 class Vector3f {
 
@@ -57,7 +52,7 @@ class Vector3f {
 
 ostream & operator << (ostream & stream, Vector3f & obj) 
 {
-	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
+	stream << '(' << obj[0] << ',' << obj[1] << ',' << obj[2] << ')';
 };
 
 

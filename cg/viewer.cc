@@ -5,16 +5,21 @@
  *  - Perspective transformation
  */
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <GL/glut.h>
 #include <cstring>
 
 #include "viewer.h"
+#include "transformation.h"
+#include "line_drawing.h"
 
 using namespace std;
 
-int nRows = 800;
-int nCols = 600;
+const int nRows = 800;
+const int nCols = 600;
+
+int zBuffer[nRows][nCols];
 
 int translation_x = 0;
 int translation_y = 0;
@@ -27,6 +32,7 @@ float rotation_z = 0;
 
 bool dda = false;
 
+Vector3f light(0.0f, 0.0f, 100.0f);
 TriangleMesh trig;
 
 void TriangleMesh::loadFile(char * filename)
@@ -97,168 +103,106 @@ void TriangleMesh::loadFile(char * filename)
 	f.close();
 };
 
-/**
- * Draws a pixel at the coordinate (x,y).
- */
-inline void draw_pixel(int x, int y)
+void faceNormal(Vector3f &result, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 {
-	glBegin(GL_POINTS);
-		glVertex2i((int)x, (int)y);
-	glEnd();
+	float u0 = vec2[0] - vec1[0];
+	float u1 = vec2[1] - vec1[1];
+	float u2 = vec2[2] - vec1[2];
+	Vector3f U(u0, u1, u2);
+
+	float v0 = vec3[0] - vec1[0];
+	float v1 = vec3[1] - vec1[1];
+	float v2 = vec3[2] - vec1[2];
+	Vector3f V(v0, v1, v2);
+
+	float nx = (U[1]*V[2]) - (U[2]*V[1]);
+	float ny = (U[2]*V[0]) - (U[0]*V[2]);
+	float nz = (U[0]*V[1]) - (U[1]*V[0]);
+
+	result[0] = nx;
+	result[1] = ny;
+	result[2] = nz;
 }
 
-/*
- * Draws a line using the Midpoint line algorithm from (x0,y0) to (x1,y1).
- */
-void bresenhams_line(int x0, int y0, int x1, int y1)
+bool isInside(int x, int y, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 {
-	int dx = abs(x1-x0);
-	int dy = abs(y1-y0);
+	Vector3f vs[3] = {vec1, vec2, vec3};
+	float xs[3] = {0,0,0};
+	float ys[3] = {0,0,0};
 
-	int sx, sy;
-	int err = dx - dy;
-
-	sx = (x0 < x1) ? 1 : -1;
-	sy = (y0 < y1) ? 1 : -1;
-
-	while(true)
+	for (int i = 0; i < 3; i++)
 	{
-		draw_pixel(x0, y0);
+		xs[i] = vs[i][0];
+		ys[i] = vs[i][2];
+	}
 
-		if (x0 == x1 && y0 == y1) break;
+	bool inside = false;
 
-		int e2 = 2 * err;
+	for (int i = 0, j = 2; i < 3; j = i++)
+	{
+		if(((ys[i] > y) != (ys[j] > y)) && (x < (xs[j]-xs[i]) * (y-ys[i]) / (ys[j]-ys[i]) + xs[i]))
+			inside = !inside;
+	}
 
-		if (e2 > -dy)
+	if(inside)
+		cout << "(" << x << ", " << y << ") - " << inside << endl;
+
+	return true;
+}
+
+void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
+{
+	//cout << "Vector 1: " << vec1 << endl;
+	//cout << "Vector 2: " << vec2 << endl;
+	//cout << "Vector 3: " << vec3 << endl;
+
+	float min_x = min(vec1[0], vec2[0]);
+	min_x = min(min_x, vec3[0]);
+
+	float max_x = max(vec1[0], vec2[0]);
+	max_x = max(max_x, vec3[0]);
+
+	float min_y = min(vec1[1], vec2[1]);
+	min_y = min(min_y, vec3[1]);
+
+	float max_y = max(vec1[1], vec2[1]);
+	max_y = max(max_y, vec3[1]);
+
+	//cout << "X: " << min_x << "," << max_x << endl;
+	//cout << "Y: " << min_y << "," << max_y << endl;
+
+	for (int i = min_x; i < max_x; i++)
+	{
+		for (int j = min_y; j < max_y; j++)
 		{
-			err = err - dy;
-			x0 = x0 + sx;
-		}
-
-		if (e2 < dx)
-		{
-			err = err + dx;
-			y0 = y0 + sy;
+			if (isInside(i, j, vec1, vec2, vec3))
+			{
+				draw_pixel(i, j);
+			}
 		}
 	}
-}
-
-/*
- * Draws a line using the DDA line algorithm from (x0,y0) to (x1,y1).
- */
-void dda_line(int x1, int y1, int x2, int y2)
-{
-	float x,y;
-
-	int dx = x2-x1;
-	int dy = y2-y1;
-
-	int n = max(abs(dx), abs(dy));
-	float dt = n, dxdt = dx/dt, dydt = dy/dt;
-
-	x = x1;
-	y = y1;
-
-	while (n--) {
-		draw_pixel((int)x, (int)y);
-
-		x += dxdt;
-		y += dydt;
-	}
-}
-
-/**
- * Transforms a vector using the transformation matrix (a-p)
- */
-void transform(Vector3f &v,
-		float a, float b, float c, float d,
-		float e, float f, float g, float h,
-		float i, float j, float k, float l,
-		float m, float n, float o, float p)
-{
-	float v1 = v[0];
-	float v2 = v[1];
-	float v3 = v[2];
-	float v4 = 1.0f;
-
-	float ov1 = (v1*a) + (v2*e) + (v3*i) + (v4*m);
-	float ov2 = (v1*b) + (v2*f) + (v3*j) + (v4*n);
-	float ov3 = (v1*c) + (v2*g) + (v3*k) + (v4*o);
-	float ov4 = (v1*d) + (v2*h) + (v3*l) + (v4*p);
-
-	v[0] = ov1/ov4;
-	v[1] = ov2/ov4;
-	v[2] = ov3/ov4;
-}
-
-void translate_vector(Vector3f &v, float x, float y, float z)
-{
-	transform(v,
-			1,0,0,0,
-			0,1,0,0,
-			0,0,1,0,
-			x,y,z,1);
-}
-
-void scale_vector(Vector3f &v, float x, float y, float z)
-{
-	transform(v,
-			x,0,0,0,
-			0,y,0,0,
-			0,0,z,0,
-			0,0,0,1);
-}
-
-void rotate_vector_x(Vector3f &v, float d)
-{
-	transform(v,
-			1,     0,      0,0,
-			0,cos(d),-sin(d),0,
-			0,sin(d), cos(d),0,
-			0,     0,      0,1);
-}
-
-void rotate_vector_y(Vector3f &v, float d)
-{
-	transform(v,
-			cos(d) ,0,sin(d),0,
-			0      ,1,     0,0,
-			-sin(d),0,cos(d),0,
-			0      ,0,     0,1);
-}
-
-void rotate_vector_z(Vector3f &v, float d)
-{
-	transform(v,
-			cos(d),-sin(d),0,0,
-			sin(d),cos(d) ,0,0,
-			0     ,      0,1,0,
-			0     ,      0,0,1);
 }
 
 void display()
 {
-	glClear(GL_COLOR_BUFFER_BIT); // Clear OpenGL Window
-
-	/** drawing a line for test **/
-
-	/*** clear the Zbuffer here ****/
+	// Clear OpenGL Window
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	int trignum = trig.trigNum();
-	Vector3f v1,v2,v3;
+	Vector3f v1, v2, v3;
 
-	glColor3f(1,1,1);  // change the colour of the pixel
+	// change the colour of the pixel
+	glColor3f(1,1,1);
 
-	//
 	// for all the triangles, get the location of the vertices,
 	// project them on the xy plane, and color the corresponding pixel by white
 	//
-
 	for (int i = 0 ; i < trignum; i++)
 	{
 		/*** do the rasterization of the triangles here using glRecti ***/
 		trig.getTriangleVertices(i, v1,v2,v3);
 
+		// calculate normal vector
 		translate_vector(v1, translation_x, translation_y, 0);
 		translate_vector(v2, translation_x, translation_y, 0);
 		translate_vector(v3, translation_x, translation_y, 0);
@@ -271,42 +215,34 @@ void display()
 		rotate_vector_y(v2, rotation_y);
 		rotate_vector_y(v3, rotation_y);
 
-		/*
-		rotate_vector_z(v1, 0.523598);
-		rotate_vector_z(v2, 0.523598);
-		rotate_vector_z(v3, 0.523598);
-		*/
-
 		scale_vector(v1, scale, scale, scale);
 		scale_vector(v2, scale, scale, scale);
 		scale_vector(v3, scale, scale, scale);
 
+		Vector3f triangleNormal;
+		faceNormal(triangleNormal, v1, v2, v3);
+
+		if (triangleNormal[2] > 0) continue;
+		
 		//
 		// colouring the pixels at the vertex location
 		// (just doing parallel projectiion to the xy plane.
 		// only use glBegin(GL_POINTS) for rendering the scene
 		//
-		glBegin(GL_POINTS);
-			glVertex2i((int)v1[0],(int)v1[1]);
-			glVertex2i((int)v2[0],(int)v2[1]);
-			glVertex2i((int)v3[0],(int)v3[1]);
-		glEnd();
+	   //glBegin(GL_POINTS);
+	   // glVertex2i((int)v1[0],(int)v1[1]);
+	   // glVertex2i((int)v2[0],(int)v2[1]);
+	   // glVertex2i((int)v3[0],(int)v3[1]);
+	   //glEnd();
 
-		if (dda)
-		{
-			dda_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-			dda_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-			dda_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		}
-		else
-		{
-			bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-			bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-			bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		}
+		//bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
+		//bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
+		//bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		draw(v1, v2, v3);
 	}
 
 	glFlush();// Output everything
+	cout << "done!";
 }
 
 void keyboardSpecial(int key, int x, int y)
@@ -327,12 +263,12 @@ void keyboardSpecial(int key, int x, int y)
 			break;
 	}
 
-	display();
+	glutPostRedisplay();
 }
 
 void keyboard(unsigned char key, int x, int y)
 {
-	cout << "Key pressed: " << key << " - " << (int)key << " (" << x << "," << y << ")" << endl;
+	//cout << "Key pressed: " << key << " - " << (int)key << " (" << x << "," << y << ")" << endl;
 
 	switch (key)
 	{
@@ -358,7 +294,7 @@ void keyboard(unsigned char key, int x, int y)
 			dda = !dda;
 	}
 
-	display();
+	glutPostRedisplay();
 }
 
 int main(int argc, char **argv)
@@ -371,7 +307,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	int width, height;
+	for (int i = 0; i < nCols; i++)
+	{
+		for (int j = 0; j < nRows; j++)
+		{
+			zBuffer[i][j] = -99999.0f;
+		}
+	}
+
 	glutInit(&argc, argv);
 	glutInitWindowSize(nRows, nCols);
 	glutCreateWindow("Model Viewer");
