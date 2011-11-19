@@ -19,7 +19,7 @@ using namespace std;
 const int nRows = 800;
 const int nCols = 600;
 
-int zBuffer[nRows][nCols];
+int zBuffer[nCols][nRows];
 
 int translation_x = 0;
 int translation_y = 0;
@@ -32,7 +32,12 @@ float rotation_z = 0;
 
 bool dda = false;
 
-Vector3f light(0.0f, 0.0f, 100.0f);
+Vector3f camera(0.0f, 0.0f, 50.0f);
+Vector3f light(0.0f, 0.0f, 10000.0f);
+float light_intensity = 0.5;
+float model_reflectance = 0.5;
+float ambient_intensity = light_intensity * model_reflectance;
+
 TriangleMesh trig;
 
 void TriangleMesh::loadFile(char * filename)
@@ -48,7 +53,7 @@ void TriangleMesh::loadFile(char * filename)
 	char header[100];
 	float x,y,z;
 	float xmax,ymax,zmax,xmin,ymin,zmin;
-	int v1, v2, v3, n1, n2, n3;
+	int v1, v2, v3;
 
 	xmax =-10000; ymax =-10000; zmax =-10000;
 	xmin =10000; ymin =10000; zmin =10000;
@@ -95,13 +100,24 @@ void TriangleMesh::loadFile(char * filename)
 
 	for (int j = 0; j < 3; j++) av[j] /= _v.size();
 
-	for (int i = 0; i < _v.size(); i++)
+	for (unsigned int i = 0; i < _v.size(); i++)
 	{
 		for (int j = 0; j < 3; j++) _v[i][j] = (_v[i][j]-av[j])/range*400;
 	}
 	cout << "trig " << _trig.size() << " vertices " << _v.size() << endl;
 	f.close();
 };
+
+void vectorSubtract(Vector3f &result, Vector3f a, Vector3f b)
+{
+	float u0 = a[0] - b[0];
+	float u1 = a[1] - b[1];
+	float u2 = a[2] - b[2];
+
+	result[0] = u0;
+	result[1] = u1;
+	result[2] = u2;
+}
 
 void faceNormal(Vector3f &result, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 {
@@ -124,30 +140,17 @@ void faceNormal(Vector3f &result, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	result[2] = nz;
 }
 
-bool isInside(int x, int y, Vector3f vec1, Vector3f vec2, Vector3f vec3)
+float f(int a, int b, int x, int y, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 {
-	Vector3f vs[3] = {vec1, vec2, vec3};
-	float xs[3] = {0,0,0};
-	float ys[3] = {0,0,0};
+	Vector3f vecs[3] = {vec1, vec2, vec3};
 
-	for (int i = 0; i < 3; i++)
-	{
-		xs[i] = vs[i][0];
-		ys[i] = vs[i][2];
-	}
+	float y_a = vecs[a][1];
+	float y_b = vecs[b][1];
 
-	bool inside = false;
+	float x_a = vecs[a][0];
+	float x_b = vecs[b][0];
 
-	for (int i = 0, j = 2; i < 3; j = i++)
-	{
-		if(((ys[i] > y) != (ys[j] > y)) && (x < (xs[j]-xs[i]) * (y-ys[i]) / (ys[j]-ys[i]) + xs[i]))
-			inside = !inside;
-	}
-
-	if(inside)
-		cout << "(" << x << ", " << y << ") - " << inside << endl;
-
-	return true;
+	return ((y_a - y_b) * x) + ((x_b - x_a) * y) + (x_a * y_b) - (x_b * y_a);
 }
 
 void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
@@ -171,16 +174,59 @@ void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	//cout << "X: " << min_x << "," << max_x << endl;
 	//cout << "Y: " << min_y << "," << max_y << endl;
 
-	for (int i = min_x; i < max_x; i++)
+	for (int x = min_x; x < max_x; x++)
 	{
-		for (int j = min_y; j < max_y; j++)
+		for (int y = min_y; y < max_y; y++)
 		{
-			if (isInside(i, j, vec1, vec2, vec3))
+			float alpha = f(1,2,x,y,vec1,vec2,vec3) / f(1,2,vec1[0],vec1[1],vec1,vec2,vec3);
+			float beta  = f(2,0,x,y,vec1,vec2,vec3) / f(2,0,vec2[0],vec2[1],vec1,vec2,vec3);
+			float gamma = f(0,1,x,y,vec1,vec2,vec3) / f(0,1,vec3[0],vec3[1],vec1,vec2,vec3);
+
+			float z = (vec1[2] + vec2[2] + vec3[2]) / 3;
+
+			if (alpha >= 0 && beta >= 0 && gamma >= 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
 			{
-				draw_pixel(i, j);
+				draw_pixel(x,y);
+				zBuffer[x + nCols/2][y + nRows/2] = z;
 			}
 		}
 	}
+}
+
+void normalise(Vector3f &normal)
+{
+	float a = normal[0];
+	float b = normal[1];
+	float c = normal[2];
+
+	float magnitude = sqrt(a*a + b*b + c*c);
+
+	normal[0] = a/magnitude;
+	normal[1] = b/magnitude;
+	normal[2] = c/magnitude;
+}
+
+void triangleCenter(Vector3f &center, Vector3f vec1, Vector3f vec2, Vector3f vec3)
+{
+	float x = vec1[0] + vec2[0] + vec3[0];
+	float y = vec1[1] + vec2[1] + vec3[1];
+	float z = vec1[2] + vec2[2] + vec3[2];
+
+	center[0] = x/3;
+	center[1] = y/3;
+	center[2] = z/3;
+}
+
+float dotProduct(Vector3f a, Vector3f b)
+{
+	float sum = 0;
+
+	for (int i = 0; i < 3; i++)
+	{
+		sum = a[i] + b[i];
+	}
+
+	return sum;
 }
 
 void display()
@@ -222,7 +268,51 @@ void display()
 		Vector3f triangleNormal;
 		faceNormal(triangleNormal, v1, v2, v3);
 
-		if (triangleNormal[2] > 0) continue;
+		// Normalise the Normal
+		normalise(triangleNormal);
+
+		if (triangleNormal[2] < 0) continue;
+
+		// Find the triangle center
+		Vector3f center;
+		triangleCenter(center, v1, v2, v3);
+
+		// Angle between the center and the light.
+		//float angle = dotProduct(light, center);
+		//float angler = angle(light, center);
+		//cout << "Angle: " << angler << endl;
+		float I_a = ambient_intensity;
+		float k_d = 0.4;
+		float k_s = 0.8;
+		int n = 100;
+
+		Vector3f _L;
+		vectorSubtract(_L, light, center);
+		normalise(_L);
+
+		Vector3f _V;
+		vectorSubtract(_V, camera, triangleNormal);
+		normalise(_V);
+
+		Vector3f _R;
+		float q = 2 * dotProduct(_L, triangleNormal);
+		vectorSubtract(_R, triangleNormal, _L);
+		_R[0] = q * _R[0];
+		_R[1] = q * _R[1];
+		_R[2] = q * _R[2];
+		normalise(_R);
+
+		//cout << dotProduct(_V, _R) << endl;
+
+		float ambient = I_a;
+		float diffuse = k_d * dotProduct(_L, triangleNormal);
+		float specular = pow(k_s * dotProduct(_V, _R), n);
+
+		cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
+
+		float I = ambient + diffuse + specular;
+
+		glColor3f(I,I,I);
 		
 		//
 		// colouring the pixels at the vertex location
@@ -238,11 +328,19 @@ void display()
 		//bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
 		//bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
 		//bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
+		//
+
 		draw(v1, v2, v3);
 	}
 
 	glFlush();// Output everything
-	cout << "done!";
+	for (int i = 0; i < nCols; i++)
+	{
+		for (int j = 0; j < nRows; j++)
+		{
+			zBuffer[i][j] = -99999.0f;
+		}
+	}
 }
 
 void keyboardSpecial(int key, int x, int y)
@@ -307,13 +405,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	for (int i = 0; i < nCols; i++)
-	{
-		for (int j = 0; j < nRows; j++)
-		{
-			zBuffer[i][j] = -99999.0f;
-		}
-	}
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(nRows, nCols);

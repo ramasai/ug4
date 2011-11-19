@@ -52,11 +52,8 @@ class Vector3f {
 
 ostream & operator << (ostream & stream, Vector3f & obj) 
 {
-	stream << '(' << obj[0] << ',' << obj[1] << ',' << obj[2] << ')';
+	return stream << '(' << obj[0] << ',' << obj[1] << ',' << obj[2] << ')';
 };
-
-
-
 
 class Triangle {
 friend class TriangleMesh;
