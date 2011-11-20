@@ -33,11 +33,7 @@ float rotation_z = 0;
 bool dda = false;
 
 Vector3f camera(0.0f, 0.0f, 50.0f);
-Vector3f light(0.0f, 0.0f, 10000.0f);
-float light_intensity = 0.5;
-float model_reflectance = 0.5;
-float ambient_intensity = light_intensity * model_reflectance;
-
+Vector3f light(500.0f, 500.0f, 10000.0f);
 TriangleMesh trig;
 
 void TriangleMesh::loadFile(char * filename)
@@ -60,17 +56,16 @@ void TriangleMesh::loadFile(char * filename)
 	Vector3f av;
 	av[0] = av[1] = av[2] = 0.f;
 
-	while (!f.eof()) {
-		    f.getline(buf, sizeof(buf));
-		    sscanf(buf, "%s", header);
+	while (!f.eof())
+	{
+		f.getline(buf, sizeof(buf));
+		sscanf(buf, "%s", header);
 
-		    if (strcmp(header, "v") == 0) {
+		if (strcmp(header, "v") == 0)
+		{
 			sscanf(buf, "%s %f %f %f", header, &x, &y, &z);
 
-		//	x *= 1000; y *= 1000; z *= 1000;
-
 			_v.push_back(Vector3f(x,y,z));
-
 
 			av[0] += x; av[1] += y; av[2] += z;
 
@@ -81,15 +76,15 @@ void TriangleMesh::loadFile(char * filename)
 			if (x < xmin) xmin = x;
 			if (y < ymin) ymin = y;
 			if (z < zmin) zmin = z;
-		    }
-		    else if (strcmp(header, "f") == 0) {
+		}
+		else if (strcmp(header, "f") == 0)
+		{
 			sscanf(buf, "%s %d %d %d", header, &v1, &v2, &v3);
 
 			Triangle trig(v1-1, v2-1, v3-1);
 			_trig.push_back(trig);
-
-		    }
- 	}
+		}
+	}
 
 	_xmin = xmin; _ymin = ymin; _zmin = zmin;
 	_xmax = xmax; _ymax = ymax; _zmax = zmax;
@@ -184,7 +179,7 @@ void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
 
 			float z = (vec1[2] + vec2[2] + vec3[2]) / 3;
 
-			if (alpha >= 0 && beta >= 0 && gamma >= 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
+			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] <= z)
 			{
 				draw_pixel(x,y);
 				zBuffer[x + nCols/2][y + nRows/2] = z;
@@ -277,17 +272,14 @@ void display()
 		Vector3f center;
 		triangleCenter(center, v1, v2, v3);
 
-		// Angle between the center and the light.
-		//float angle = dotProduct(light, center);
-		//float angler = angle(light, center);
-		//cout << "Angle: " << angler << endl;
-		float I_a = ambient_intensity;
-		float k_d = 0.4;
-		float k_s = 0.8;
-		int n = 100;
+		float i_a = 0.8;
+		float k_a = 0.8;
+		float k_d = 0.8;
+		float k_s = 0.1;
+		int n = 1;
 
 		Vector3f _L;
-		vectorSubtract(_L, light, center);
+		vectorSubtract(_L, center, light);
 		normalise(_L);
 
 		Vector3f _V;
@@ -304,13 +296,15 @@ void display()
 
 		//cout << dotProduct(_V, _R) << endl;
 
-		float ambient = I_a;
+		float ambient = k_a * i_a; 
 		float diffuse = k_d * dotProduct(_L, triangleNormal);
 		float specular = pow(k_s * dotProduct(_V, _R), n);
 
-		cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
+		//if (specular > 0.01)
+			//cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
 
 		float I = ambient + diffuse + specular;
+		//float I = specular;
 
 		glColor3f(I,I,I);
 		
