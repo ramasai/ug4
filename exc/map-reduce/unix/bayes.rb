@@ -1,7 +1,6 @@
-FILE = "../data/small.txt"
-
-file_words = File.new(FILE).read.scan(/\w+/).reject { |w| w.match /\d/ }
-# file_words = ["John", "loves", "a", "Mary"]
+#!/usr/bin/env ruby
+TRAINING_FILE = "../data/small.txt"
+TRAINING_WORDS = File.new(TRAINING_FILE).read.scan(/\w+/).reject { |w| w.match /\d/ }
 
 class String
   def uppercase?
@@ -83,18 +82,16 @@ class BayesClassifier
 end
 
 bayes = BayesClassifier.new
-file_words.each { |word| bayes.add(word) }
+TRAINING_WORDS.each { |word| bayes.add(word) }
 
-def capitalise(bayes, sentence)
-  words = sentence.split
-  words.map! do |word|
-    if bayes.class_for?(word).eql?(:upper)
-      word.capitalize
-    else
-      word.downcase
-    end
+def capitalise(bayes, word)
+  if bayes.class_for?(word).eql?(:upper)
+    word.capitalize
+  else
+    word.downcase
   end
-  words.join(" ")
 end
 
-puts capitalise(bayes, "how can the football be cancelled because of rain")
+ARGF.each do |line|
+  puts capitalise(bayes, line)
+end
