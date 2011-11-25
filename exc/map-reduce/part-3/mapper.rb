@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+# Make sure that Ruby doesn't try and `help` us by buffering the output at all.
 STDOUT.sync = true
 
 # Returns the different features of the word.
@@ -19,7 +20,10 @@ def features(word)
     word[0..2],
     word[-2..-1],
     word[-3..-1]
-  ]
+  ].map do |w|
+    w ||= ""
+    w.downcase
+  end
 end
 
 ARGF.each do |line|
