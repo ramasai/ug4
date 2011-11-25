@@ -46,3 +46,12 @@ ARGF.each do |line|
 
   words[feature][uppercase] += count
 end
+
+# Remember to output the last word in the file.
+words.each_key do |key|
+  sum = words[key][0] + words[key][1]
+  lower = words[key][0].to_f/sum
+  upper = words[key][1].to_f/sum
+
+  puts "#{key}\t#{lower}\t#{upper}"
+end
