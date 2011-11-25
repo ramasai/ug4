@@ -20,7 +20,10 @@ def features(word)
     word[0..2],
     word[-2..-1],
     word[-3..-1]
-  ]
+  ].map do |w|
+    w ||= ""
+    w.downcase
+  end
 end
 
 # Naive Bayes
