@@ -21,9 +21,8 @@ def features(word)
     word[-2..-1],
     word[-3..-1]
   ].map do |w|
-    w ||= ""
-    w.downcase
-  end
+    w.downcase unless w.nil?
+  end.compact
 end
 
 # Naive Bayes
@@ -41,7 +40,6 @@ ARGF.each do |line|
     word_features = features(word)
 
     word_features.each do |feature|
-      next if feature.nil?
       puts "#{feature}\t#{uppercase}\t1"
     end
   end

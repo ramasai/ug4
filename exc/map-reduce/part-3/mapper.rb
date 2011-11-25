@@ -21,9 +21,8 @@ def features(word)
     word[-2..-1],
     word[-3..-1]
   ].map do |w|
-    w ||= ""
-    w.downcase
-  end
+    w.downcase unless w.nil?
+  end.compact
 end
 
 ARGF.each do |line|
