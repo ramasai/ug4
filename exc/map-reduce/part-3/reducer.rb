@@ -15,7 +15,7 @@ ARGF.each do |line|
     
   unless word == current_word
     current_features.uniq.each do |feature|
-      puts "#{word}\t#{feature}"
+      puts "#{current_word}\t#{feature}"
     end
     
     current_word = word
