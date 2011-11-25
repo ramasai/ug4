@@ -49,7 +49,8 @@ end
 # Loop through each of the training words and increment the counts for each
 # feature of the word.
 TRAINING_WORDS.each do |word|
-  uppercase = word.match(/[A-Z]/) ? 1 : 0
+  # Does the word have any capital letters in it?
+  uppercase = word.match(/^[A-Z]/) ? 1 : 0
   word_features = features(word)
 
   word_features.each do |feature|
