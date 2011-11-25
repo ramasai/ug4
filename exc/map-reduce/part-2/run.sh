@@ -1,6 +1,6 @@
 #/usr/bin/env sh
 
-hadoop jar contrib/streaming/hadoop-0.20.2-streaming.jar \
+hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
               -input /user/s0824586/coursework/input-train \
               -output /user/s0824586/coursework/output-part2 \
               -mapper mapper.rb \
