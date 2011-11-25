@@ -6,25 +6,10 @@ STDOUT.sync = true
 # To stop the word's features being repeated we only allow a word to print 5
 # features before refusing to print any more.
 
-current_word = nil
-current_features = []
+used_lines = []
 
-ARGF.each do |line|
-  word, feature = line.split
-  current_word = word if word.nil?
-    
-  unless word == current_word
-    current_features.uniq.sort.each do |feature|
-      puts "#{current_word}\t#{feature}"
-    end
-    
-    current_word = word
-    current_features.clear
-  end
-  
-  current_features << feature
-end
-
-current_features.uniq.each do |feature|
-  puts "#{current_word}\t#{feature}"
+ARGF.each do |line|  
+  next if used_lines.include? line
+  puts line
+  used_lines << line
 end
