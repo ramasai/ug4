@@ -1,8 +1,8 @@
 #/usr/bin/env sh
 
 hadoop jar contrib/streaming/hadoop-0.20.2-streaming.jar \
-              -input $1 \
-              -output $2 \
+              -input /user/s0824586/coursework/input-train \
+              -output /user/s0824586/coursework/output-part2 \
               -mapper mapper.rb \
               -file mapper.rb \
               -reducer reducer.rb \
