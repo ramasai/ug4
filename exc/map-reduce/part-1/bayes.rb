@@ -3,7 +3,7 @@
 # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
 STDOUT.sync = true
 
-# Returns the different features of the word.
+# Returns the different lower case features of the word.
 #
 # These are:
 #
