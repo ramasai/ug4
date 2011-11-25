@@ -7,4 +7,4 @@ hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.j
               -file mapper.rb \
               -reducer reducer.rb \
               -file reducer.rb \
-              -jobconf mapred.job.name="s0824586 - Part 2"
+              -D mapred.job.name="s0824586 - Part 2"
