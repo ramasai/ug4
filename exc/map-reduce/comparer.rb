@@ -1,16 +1,19 @@
-first_file = File.new(ARGV[0]).read.split("\n")
-second_file = File.new(ARGV[1]).read.split("\n")
+first_file = File.new(ARGV[0]).read.split("\n").reject { |r| r == "" }
+second_file = File.new(ARGV[1]).read.split("\n").reject { |r| r == "" }
 
 count = 0
 good = 0
 bad = 0
 
-first_file.zip(second_file).each do |a, b|
-  same_word = a[0] == b[0]
+def same_word(a, b)
+  same = a[0] == b[0]
   if a.length > 0
-    same_word = same_word && a[1..-1].downcase == b[1..-1].downcase
+    same = same && a[1..-1].downcase == b[1..-1].downcase
   end
-  if same_word
+end
+
+first_file.zip(second_file).each do |a, b|
+  if same_word(a, b)
     good += 1
     puts "GOOD"
   else
