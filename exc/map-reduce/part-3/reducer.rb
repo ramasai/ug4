@@ -7,24 +7,19 @@ STDOUT.sync = true
 # features before refusing to print any more.
 
 current_word = nil
-current_features = []
+feature_count = 0
 
 ARGF.each do |line|
   word, feature = line.split
-  current_word = word if word.nil?
-    
-  unless word == current_word
-    current_features.uniq.each do |feature|
-      puts "#{current_word}\t#{feature}"
-    end
-    
-    current_word = word
-    current_features.clear
-  end
-  
-  current_features << feature
-end
 
-current_features.uniq.each do |feature|
-  puts "#{current_word}\t#{feature}"
+  if current_word.nil? || current_word != word
+    current_word = word
+    feature_count = 0
+  end
+
+  if feature_count < 5
+    puts line
+  end
+
+  feature_count += 1
 end
