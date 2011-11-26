@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <vector>
-#include <GL/glut.h>
+#include <GLUT/glut.h>
+
+#include <map>
 
 using namespace std;
 
@@ -14,6 +16,7 @@ using namespace std;
 class Vector3f;
 class Triangle;
 class TriangleMesh;
+class TriangleComparer;
 
 class Vector3f {
 
@@ -48,6 +51,44 @@ class Vector3f {
 
 		return *this;
 	};
+    
+    bool operator<(const Vector3f &other) const
+    {
+        if (_item[0] < other._item[0])
+        {
+            return true;
+        }
+        else if (_item[0] > other._item[0])
+        {
+            return false;
+        }
+        else
+        {
+            if (_item[1] < other._item[1])
+            {
+                return true;
+            }
+            else if (_item[1] > other._item[1])
+            {
+                return false;
+            }
+            else
+            {
+                if (_item[2] < other._item[2])
+                {
+                    return true;
+                }
+                else if (_item[2] > other._item[2])
+                {
+                    return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+    }
 };
 
 ostream & operator << (ostream & stream, Vector3f & obj) 
@@ -58,15 +99,25 @@ ostream & operator << (ostream & stream, Vector3f & obj)
 class Triangle {
 friend class TriangleMesh;
 
-	int _vertex[3];
 public:
-
+	int _vertex[3];
+    
 	Triangle(int v1, int v2, int v3) 
 	{
 		_vertex[0] = v1;  _vertex[1] = v2;  _vertex[2] = v3;  
 		
-	};
+	};  
 };
+
+//class VectorComparer : public std::binary_function<Vector3f, Vector3f, bool>
+//{
+//public:
+//    bool operator () (Vector3f &vec1, 
+//                      Vector3f &vec2) const
+//    {
+//        return vec1.operator<(vec2);
+//    }
+//};
 
 float fmax(float f1,float f2, float f3) {
 	float f = f1;
@@ -89,11 +140,13 @@ float fmin(float f1,float f2, float f3) {
 
 class TriangleMesh 
 {
+public: 
 	vector <Vector3f> _v;
 	vector <Triangle> _trig;
+    map <Vector3f, vector<Triangle> > _reverse;
+
 	float _xmax, _xmin, _ymax, _ymin, _zmin, _zmax;
 
-public: 
 	TriangleMesh(char * filename) { loadFile(filename) ;};
 	TriangleMesh() {};
 	void loadFile(char * filename);

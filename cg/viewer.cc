@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 #include <cstring>
 
 #include "viewer.h"
@@ -30,10 +30,9 @@ float rotation_x = 0;
 float rotation_y = 0;
 float rotation_z = 0;
 
-bool dda = false;
-
 Vector3f camera(0.0f, 0.0f, 50.0f);
 Vector3f light(500.0f, 500.0f, 10000.0f);
+
 TriangleMesh trig;
 
 void TriangleMesh::loadFile(char * filename)
@@ -83,6 +82,10 @@ void TriangleMesh::loadFile(char * filename)
 
 			Triangle trig(v1-1, v2-1, v3-1);
 			_trig.push_back(trig);
+            
+            _reverse[_v[v1-1]].push_back(trig);
+            _reverse[_v[v2-1]].push_back(trig);
+            _reverse[_v[v3-1]].push_back(trig);
 		}
 	}
 
@@ -148,25 +151,136 @@ float f(int a, int b, int x, int y, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	return ((y_a - y_b) * x) + ((x_b - x_a) * y) + (x_a * y_b) - (x_b * y_a);
 }
 
-void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
+void normalise(Vector3f &normal)
 {
+	float a = normal[0];
+	float b = normal[1];
+	float c = normal[2];
+    
+	float magnitude = sqrt(a*a + b*b + c*c);
+    
+	normal[0] = a/magnitude;
+	normal[1] = b/magnitude;
+	normal[2] = c/magnitude;
+}
+
+void triangleCenter(Vector3f &center, Vector3f vec1, Vector3f vec2, Vector3f vec3)
+{
+	float x = vec1[0] + vec2[0] + vec3[0];
+	float y = vec1[1] + vec2[1] + vec3[1];
+	float z = vec1[2] + vec2[2] + vec3[2];
+    
+	center[0] = x/3;
+	center[1] = y/3;
+	center[2] = z/3;
+}
+
+float dotProduct(Vector3f a, Vector3f b)
+{
+	float sum = 0;
+    
+	for (int i = 0; i < 3; i++)
+	{
+		sum = a[i] + b[i];
+	}
+    
+	return sum;
+}
+
+void vertexNormal(Vector3f &normal, Vector3f vertex)
+{
+    vector<Triangle> v = trig._reverse[vertex];
+    
+    float vecNormalX = 0;
+    float vecNormalY = 0;
+    float vecNormalZ = 0;
+    int vecTrig = 0;
+    
+    for(std::vector<Triangle>::iterator it = v.begin(); it != v.end(); ++it) {
+        Triangle tri = *it;
+        Vector3f v1 = trig._v[tri._vertex[0]];
+        Vector3f v2 = trig._v[tri._vertex[1]];
+        Vector3f v3 = trig._v[tri._vertex[2]];
+        
+        Vector3f normal;
+        faceNormal(normal, v1, v2, v3);
+        
+        vecTrig++;
+        vecNormalX += normal[0];
+        vecNormalY += normal[1];
+        vecNormalZ += normal[2];
+    }
+    
+    normal[0] = vecNormalX/vecTrig;
+    normal[1] = vecNormalY/vecTrig;
+    normal[2] = vecNormalZ/vecTrig;
+    normalise(normal);
+}
+
+void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
+{
+    Vector3f vec1Normal;
+    vertexNormal(vec1Normal, vec1);
+    
+    Vector3f vec2Normal;
+    vertexNormal(vec2Normal, vec2);
+    
+    Vector3f vec3Normal;
+    vertexNormal(vec3Normal, vec3);
+
+    
+    Vector3f center;
+    triangleCenter(center, vec1, vec2, vec3);
+    
+    Vector3f triangleNormal;
+    faceNormal(triangleNormal, vec1, vec2, vec3);
+    
+    // Normalise the Normal
+    normalise(triangleNormal);
+    
 	//cout << "Vector 1: " << vec1 << endl;
 	//cout << "Vector 2: " << vec2 << endl;
 	//cout << "Vector 3: " << vec3 << endl;
 
-	float min_x = min(vec1[0], vec2[0]);
-	min_x = min(min_x, vec3[0]);
-
-	float max_x = max(vec1[0], vec2[0]);
-	max_x = max(max_x, vec3[0]);
-
-	float min_y = min(vec1[1], vec2[1]);
-	min_y = min(min_y, vec3[1]);
-
-	float max_y = max(vec1[1], vec2[1]);
-	max_y = max(max_y, vec3[1]);
+	float min_x = fmin(vec1[0], vec2[0], vec3[0]);
+	float max_x = fmax(vec1[0], vec2[0], vec3[0]);
+	float min_y = fmin(vec1[1], vec2[1], vec3[1]);
+	float max_y = fmax(vec1[1], vec2[1], vec3[1]);
 
 	//cout << "X: " << min_x << "," << max_x << endl;
+    
+    float I_a = 0.8;
+    float k_d = 0.8;
+    float k_s = 0.8;
+    int n = 1;
+    
+    Vector3f _L;
+    vectorSubtract(_L, center, light);
+    normalise(_L);
+    
+    Vector3f _V;
+    vectorSubtract(_V, camera, triangleNormal);
+    normalise(_V);
+    
+    Vector3f _R;
+    float q = 2 * dotProduct(_L, triangleNormal);
+    vectorSubtract(_R, triangleNormal, _L);
+    _R[0] = q * _R[0];
+    _R[1] = q * _R[1];
+    _R[2] = q * _R[2];
+    normalise(_R);
+    
+    //cout << dotProduct(_V, _R) << endl;
+    
+    float ambient = I_a;
+    float diffuse = k_d * dotProduct(_L, triangleNormal);
+    float specular = pow(k_s * dotProduct(_V, _R), n);
+    
+    //cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
+    
+    float I = ambient + diffuse + specular;
+    
+    glColor3f(I,I,I);
 	//cout << "Y: " << min_y << "," << max_y << endl;
 
 	for (int x = min_x; x < max_x; x++)
@@ -179,49 +293,13 @@ void draw(Vector3f vec1, Vector3f vec2, Vector3f vec3)
 
 			float z = (vec1[2] + vec2[2] + vec3[2]) / 3;
 
-			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] <= z)
+			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
 			{
 				draw_pixel(x,y);
 				zBuffer[x + nCols/2][y + nRows/2] = z;
 			}
 		}
 	}
-}
-
-void normalise(Vector3f &normal)
-{
-	float a = normal[0];
-	float b = normal[1];
-	float c = normal[2];
-
-	float magnitude = sqrt(a*a + b*b + c*c);
-
-	normal[0] = a/magnitude;
-	normal[1] = b/magnitude;
-	normal[2] = c/magnitude;
-}
-
-void triangleCenter(Vector3f &center, Vector3f vec1, Vector3f vec2, Vector3f vec3)
-{
-	float x = vec1[0] + vec2[0] + vec3[0];
-	float y = vec1[1] + vec2[1] + vec3[1];
-	float z = vec1[2] + vec2[2] + vec3[2];
-
-	center[0] = x/3;
-	center[1] = y/3;
-	center[2] = z/3;
-}
-
-float dotProduct(Vector3f a, Vector3f b)
-{
-	float sum = 0;
-
-	for (int i = 0; i < 3; i++)
-	{
-		sum = a[i] + b[i];
-	}
-
-	return sum;
 }
 
 void display()
@@ -259,54 +337,6 @@ void display()
 		scale_vector(v1, scale, scale, scale);
 		scale_vector(v2, scale, scale, scale);
 		scale_vector(v3, scale, scale, scale);
-
-		Vector3f triangleNormal;
-		faceNormal(triangleNormal, v1, v2, v3);
-
-		// Normalise the Normal
-		normalise(triangleNormal);
-
-		if (triangleNormal[2] < 0) continue;
-
-		// Find the triangle center
-		Vector3f center;
-		triangleCenter(center, v1, v2, v3);
-
-		float i_a = 0.8;
-		float k_a = 0.8;
-		float k_d = 0.8;
-		float k_s = 0.1;
-		int n = 1;
-
-		Vector3f _L;
-		vectorSubtract(_L, center, light);
-		normalise(_L);
-
-		Vector3f _V;
-		vectorSubtract(_V, camera, triangleNormal);
-		normalise(_V);
-
-		Vector3f _R;
-		float q = 2 * dotProduct(_L, triangleNormal);
-		vectorSubtract(_R, triangleNormal, _L);
-		_R[0] = q * _R[0];
-		_R[1] = q * _R[1];
-		_R[2] = q * _R[2];
-		normalise(_R);
-
-		//cout << dotProduct(_V, _R) << endl;
-
-		float ambient = k_a * i_a; 
-		float diffuse = k_d * dotProduct(_L, triangleNormal);
-		float specular = pow(k_s * dotProduct(_V, _R), n);
-
-		//if (specular > 0.01)
-			//cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
-
-		float I = ambient + diffuse + specular;
-		//float I = specular;
-
-		glColor3f(I,I,I);
 		
 		//
 		// colouring the pixels at the vertex location
@@ -324,7 +354,7 @@ void display()
 		//bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
 		//
 
-		draw(v1, v2, v3);
+		draw(i, v1, v2, v3);
 	}
 
 	glFlush();// Output everything
@@ -382,8 +412,6 @@ void keyboard(unsigned char key, int x, int y)
 		case 'x':
 			scale += 0.1;
 			break;
-		case ' ':
-			dda = !dda;
 	}
 
 	glutPostRedisplay();
