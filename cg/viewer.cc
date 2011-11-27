@@ -34,6 +34,7 @@ Vector3f camera(0.0f, 0.0f, 50.0f);
 Vector3f light(500.0f, 500.0f, 10000.0f);
 
 TriangleMesh trig;
+map <int, vector<Triangle> > reverse_index;
 
 void TriangleMesh::loadFile(char * filename)
 {
@@ -83,9 +84,9 @@ void TriangleMesh::loadFile(char * filename)
 			Triangle trig(v1-1, v2-1, v3-1);
 			_trig.push_back(trig);
             
-            _reverse[_v[v1-1]].push_back(trig);
-            _reverse[_v[v2-1]].push_back(trig);
-            _reverse[_v[v3-1]].push_back(trig);
+            reverse_index[v1-1].push_back(trig);
+            reverse_index[v2-1].push_back(trig);
+            reverse_index[v3-1].push_back(trig);
 		}
 	}
 
@@ -189,8 +190,21 @@ float dotProduct(Vector3f a, Vector3f b)
 
 void vertexNormal(Vector3f &normal, Vector3f vertex)
 {
-    vector<Triangle> v = trig._reverse[vertex];
+    int j = 0;
     
+    for(std::vector<Vector3f>::iterator it = trig._v.begin(); it != trig._v.end(); ++it)
+    {
+        Vector3f vec = trig._v.at(j);
+        
+        if (vec == vertex)
+        {
+            break;
+        }
+        j++;
+    }
+    
+    vector<Triangle> v(reverse_index[j]);
+            
     float vecNormalX = 0;
     float vecNormalY = 0;
     float vecNormalZ = 0;
@@ -198,49 +212,31 @@ void vertexNormal(Vector3f &normal, Vector3f vertex)
     
     for(std::vector<Triangle>::iterator it = v.begin(); it != v.end(); ++it) {
         Triangle tri = *it;
-        Vector3f v1 = trig._v[tri._vertex[0]];
-        Vector3f v2 = trig._v[tri._vertex[1]];
-        Vector3f v3 = trig._v[tri._vertex[2]];
         
-        Vector3f normal;
-        faceNormal(normal, v1, v2, v3);
+        Vector3f v1(trig._v[tri._vertex[0]][0], trig._v[tri._vertex[0]][1], trig._v[tri._vertex[0]][2]);
+        Vector3f v2(trig._v[tri._vertex[1]][0], trig._v[tri._vertex[1]][1], trig._v[tri._vertex[1]][2]);
+        Vector3f v3(trig._v[tri._vertex[2]][0], trig._v[tri._vertex[2]][1], trig._v[tri._vertex[2]][2]);
+        
+        Vector3f fnormal;
+        faceNormal(fnormal, v1, v2, v3);
         
         vecTrig++;
-        vecNormalX += normal[0];
-        vecNormalY += normal[1];
-        vecNormalZ += normal[2];
+        vecNormalX += fnormal[0];
+        vecNormalY += fnormal[1];
+        vecNormalZ += fnormal[2];
     }
     
     normal[0] = vecNormalX/vecTrig;
     normal[1] = vecNormalY/vecTrig;
     normal[2] = vecNormalZ/vecTrig;
+        
     normalise(normal);
 }
 
 void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 {
-    Vector3f vec1Normal;
-    vertexNormal(vec1Normal, vec1);
-    
-    Vector3f vec2Normal;
-    vertexNormal(vec2Normal, vec2);
-    
-    Vector3f vec3Normal;
-    vertexNormal(vec3Normal, vec3);
-
-    
-    Vector3f center;
-    triangleCenter(center, vec1, vec2, vec3);
-    
-    Vector3f triangleNormal;
-    faceNormal(triangleNormal, vec1, vec2, vec3);
-    
-    // Normalise the Normal
-    normalise(triangleNormal);
-    
-	//cout << "Vector 1: " << vec1 << endl;
-	//cout << "Vector 2: " << vec2 << endl;
-	//cout << "Vector 3: " << vec3 << endl;
+    Vector3f vecs[3] = {vec1, vec2, vec3};
+    Vector3f vecNormals[3];
 
 	float min_x = fmin(vec1[0], vec2[0], vec3[0]);
 	float max_x = fmax(vec1[0], vec2[0], vec3[0]);
@@ -249,52 +245,69 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 
 	//cout << "X: " << min_x << "," << max_x << endl;
     
-    float I_a = 0.8;
-    float k_d = 0.8;
-    float k_s = 0.8;
-    int n = 1;
+    float I_a = 0.2;
+    float k_d = 0.1;
+    float k_s = 0.9;
+    int n = 2;
     
-    Vector3f _L;
-    vectorSubtract(_L, center, light);
-    normalise(_L);
+    Vector3f _L[3];
+    Vector3f _V[3];
+    Vector3f _R[3];
     
-    Vector3f _V;
-    vectorSubtract(_V, camera, triangleNormal);
-    normalise(_V);
-    
-    Vector3f _R;
-    float q = 2 * dotProduct(_L, triangleNormal);
-    vectorSubtract(_R, triangleNormal, _L);
-    _R[0] = q * _R[0];
-    _R[1] = q * _R[1];
-    _R[2] = q * _R[2];
-    normalise(_R);
-    
-    //cout << dotProduct(_V, _R) << endl;
-    
-    float ambient = I_a;
-    float diffuse = k_d * dotProduct(_L, triangleNormal);
-    float specular = pow(k_s * dotProduct(_V, _R), n);
-    
-    //cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
-    
-    float I = ambient + diffuse + specular;
-    
-    glColor3f(I,I,I);
-	//cout << "Y: " << min_y << "," << max_y << endl;
+    float I[3];
+
+    for (int i = 0; i < 3; i++) {
+        vertexNormal(vecNormals[i], vecs[i]);
+        
+        vectorSubtract(_L[i], light, vecs[i]);
+        normalise(_L[i]);
+        
+        vectorSubtract(_V[i], camera, vecNormals[i]);
+        normalise(_V[i]);
+        
+        float q = 2 * dotProduct(_L[i], vecNormals[i]);
+        vectorSubtract(_R[i], vecNormals[i], _L[i]);
+        _R[i][0] = q * _R[i][0];
+        _R[i][1] = q * _R[i][1];
+        _R[i][2] = q * _R[i][2];
+        normalise(_R[i]);
+        
+        float ambient = I_a;
+        float diffuse = k_d * dotProduct(_L[i], vecNormals[i]);
+        float specular = pow(k_s * dotProduct(_V[i], _R[i]), n);
+        
+        I[i] = ambient + diffuse + specular;
+        
+//        cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
+    }
 
 	for (int x = min_x; x < max_x; x++)
 	{
 		for (int y = min_y; y < max_y; y++)
 		{
-			float alpha = f(1,2,x,y,vec1,vec2,vec3) / f(1,2,vec1[0],vec1[1],vec1,vec2,vec3);
-			float beta  = f(2,0,x,y,vec1,vec2,vec3) / f(2,0,vec2[0],vec2[1],vec1,vec2,vec3);
-			float gamma = f(0,1,x,y,vec1,vec2,vec3) / f(0,1,vec3[0],vec3[1],vec1,vec2,vec3);
+//			float alpha = f(1,2,x,y,vec1,vec2,vec3) / f(1,2,vec1[0],vec1[1],vec1,vec2,vec3);
+//			float beta  = f(2,0,x,y,vec1,vec2,vec3) / f(2,0,vec2[0],vec2[1],vec1,vec2,vec3);
+//			float gamma = f(0,1,x,y,vec1,vec2,vec3) / f(0,1,vec3[0],vec3[1],vec1,vec2,vec3);
+            
+            float alpha_num = ((vec2[1] - vec3[1]) * (x - vec3[0])) + ((vec3[0] - vec2[0]) * (y - vec3[1]));
+            float alpha_dem = ((vec2[1] - vec3[1]) * (vec1[0] - vec3[0])) + ((vec3[0] - vec2[0]) * (vec1[1] - vec3[1]));
+            float alpha = alpha_num/alpha_dem;
+            
+            float beta_num = ((vec3[1] - vec1[1]) * (x - vec3[0])) + ((vec1[0] - vec3[0]) * (y - vec3[1]));
+            float beta_dem = ((vec2[1] - vec3[1]) * (vec1[0] - vec3[0])) + ((vec3[0] - vec2[0]) * (vec1[1]-vec3[1]));
+            float beta = beta_num/beta_dem;
 
-			float z = (vec1[2] + vec2[2] + vec3[2]) / 3;
+            float gamma = 1 - alpha - beta;
+			float z = (alpha * vec1[2] + beta * vec2[2] + gamma * vec3[2]);
 
 			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
 			{
+//                cout << "Sum is " << sum << endl;
+//                cout << "Alpha: " << alpha << endl << "Beta: " << beta << endl << "Gamma: " << gamma << endl << endl;
+
+                float ill = (alpha * I[0] + beta * I[1] + gamma * I[2]);
+                glColor3f(ill * 0.905882, ill * 0.419246, ill * 0.219607);
+                
 				draw_pixel(x,y);
 				zBuffer[x + nCols/2][y + nRows/2] = z;
 			}
@@ -311,7 +324,7 @@ void display()
 	Vector3f v1, v2, v3;
 
 	// change the colour of the pixel
-	glColor3f(1,1,1);
+	glColor3f(0,0,0);
 
 	// for all the triangles, get the location of the vertices,
 	// project them on the xy plane, and color the corresponding pixel by white
@@ -358,13 +371,14 @@ void display()
 	}
 
 	glFlush();// Output everything
-	for (int i = 0; i < nCols; i++)
-	{
-		for (int j = 0; j < nRows; j++)
-		{
-			zBuffer[i][j] = -99999.0f;
-		}
-	}
+    
+//	for (int i = 0; i < nCols; i++)
+//	{
+//		for (int j = 0; j < nRows; j++)
+//		{
+//			zBuffer[i][j] = -99999.0f;
+//		}
+//	}
 }
 
 void keyboardSpecial(int key, int x, int y)
@@ -372,16 +386,16 @@ void keyboardSpecial(int key, int x, int y)
 	switch (key)
 	{
 		case GLUT_KEY_UP:
-			rotation_x += 0.05;
+			rotation_x += 0.30;
 			break;
 		case GLUT_KEY_LEFT:
-			rotation_y += 0.05;
+			rotation_y += 0.30;
 			break;
 		case GLUT_KEY_DOWN:
-			rotation_x -= 0.05;
+			rotation_x -= 0.30;
 			break;
 		case GLUT_KEY_RIGHT:
-			rotation_y -= 0.05;
+			rotation_y -= 0.30;
 			break;
 	}
 
@@ -426,7 +440,6 @@ int main(int argc, char **argv)
 		cerr << argv[0] << " <filename> " << endl;
 		exit(1);
 	}
-
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(nRows, nCols);

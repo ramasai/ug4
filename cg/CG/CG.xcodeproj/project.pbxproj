@@ -7,20 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		223C0A5E148154FD00C52231 /* CG.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 223C0A5D148154FD00C52231 /* CG.1 */; };
 		223C0A681481551A00C52231 /* viewer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 223C0A661481551A00C52231 /* viewer.cc */; };
 		223C0A6A1481553000C52231 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 223C0A691481553000C52231 /* OpenGL.framework */; };
 		223C0A6C1481553600C52231 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 223C0A6B1481553600C52231 /* GLUT.framework */; };
+		223C0A731481A25B00C52231 /* pumpkin.obj in CopyFiles */ = {isa = PBXBuildFile; fileRef = 223C0A721481A25B00C52231 /* pumpkin.obj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		223C0A55148154FD00C52231 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 8;
+			dstPath = hello;
+			dstSubfolderSpec = 16;
 			files = (
-				223C0A5E148154FD00C52231 /* CG.1 in CopyFiles */,
+				223C0A731481A25B00C52231 /* pumpkin.obj in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -36,6 +36,7 @@
 		223C0A671481551A00C52231 /* viewer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = viewer.h; path = ../../viewer.h; sourceTree = "<group>"; };
 		223C0A691481553000C52231 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		223C0A6B1481553600C52231 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		223C0A721481A25B00C52231 /* pumpkin.obj */ = {isa = PBXFileReference; lastKnownFileType = text; name = pumpkin.obj; path = ../pumpkin.obj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +55,7 @@
 		223C0A4C148154FC00C52231 = {
 			isa = PBXGroup;
 			children = (
+				223C0A721481A25B00C52231 /* pumpkin.obj */,
 				223C0A6B1481553600C52231 /* GLUT.framework */,
 				223C0A691481553000C52231 /* OpenGL.framework */,
 				223C0A5A148154FD00C52231 /* CG */,
@@ -217,6 +219,7 @@
 				223C0A63148154FD00C52231 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

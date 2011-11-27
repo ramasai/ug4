@@ -52,6 +52,13 @@ class Vector3f {
 		return *this;
 	};
     
+    bool operator==(const Vector3f & other) const
+    {
+        return _item[0] == other._item[0] &&
+            _item[1] == other._item[1] &&
+        _item[2] == other._item[2];
+    }
+    
     bool operator<(const Vector3f &other) const
     {
         if (_item[0] < other._item[0])
@@ -143,7 +150,6 @@ class TriangleMesh
 public: 
 	vector <Vector3f> _v;
 	vector <Triangle> _trig;
-    map <Vector3f, vector<Triangle> > _reverse;
 
 	float _xmax, _xmin, _ymax, _ymin, _zmin, _zmax;
 
