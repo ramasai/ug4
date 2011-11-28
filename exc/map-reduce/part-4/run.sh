@@ -15,7 +15,7 @@ hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.j
               -reducer reducer-step1.rb \
               -file reducer-step1.rb \
 
-              # Run the task
+# Run the task
 hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
               -jobconf mapred.job.name="s0824586 - Part 4 - Step 2" \
               -input /user/s0824586/coursework/output-part4-step-1 \
