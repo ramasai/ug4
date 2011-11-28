@@ -5,9 +5,9 @@ STDOUT.sync = true
 
 ARGF.each do |line|
   word, upper = line.split
-  upper = (upper == 1)
+  upper = (upper == "1")
   
-  word.capitalize if upper
+  word.capitalize! if upper
   
   puts word
 end
