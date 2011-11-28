@@ -104,7 +104,7 @@ def word_case(word, model)
   upper = upper_prob.inject(:*)
 
   # Return the class of the larger one.
-  lower > upper ? 0 : 1
+  upper > lower ? 1 : 0
 end
 
 # For each of the words in the test data we now classify it and print it out.
