@@ -8,7 +8,7 @@ bad = 0
 def same_word(a, b)
   same = a[0] == b[0]
   if a.length > 0
-    same = same && a[1..-1].downcase == b[1..-1].downcase
+    same = same && a[1..-1].downcase.strip == b[1..-1].downcase.strip
   end
 end
 

@@ -12,5 +12,5 @@ hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.j
               -file mapper.rb \
               -reducer cat
 
-hadoop fs -copyToLocal /user/s0824586/coursework/output-part5 ../output
+hadoop fs -copyToLocal /user/s0824586/coursework/output-part5/* ../output
 cat ../output/* > ../output
