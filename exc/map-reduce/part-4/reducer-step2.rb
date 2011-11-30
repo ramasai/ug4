@@ -8,7 +8,7 @@ lower_product = 1
 upper_product = 1
 
 ARGF.each do |line|
-  word, feature, lower, upper = line.split
+  word, feature, lower, upper = line.split "\t"
   current_word = word if current_word.nil?
   
   unless current_word == word

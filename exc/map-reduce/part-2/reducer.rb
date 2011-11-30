@@ -21,7 +21,7 @@ end
 current_feature = nil
 
 ARGF.each do |line|
-  feature, uppercase, count = line.chomp.split
+  feature, uppercase, count = line.chomp.split "\t"
   
   # If we have reached a new word in the input then output all of the current words.
   unless feature == current_feature

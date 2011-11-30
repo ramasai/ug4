@@ -25,7 +25,7 @@ def dump_saved_words(saved_words, feature)
 end
 
 ARGF.each do |line|
-  tokens = line.split
+  tokens = line.split "\t"
   
   if tokens.length == 2
     feature, word = tokens
