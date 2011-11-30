@@ -19,6 +19,8 @@ current_feature = {
 saved_words = []
 
 def dump_saved_words(saved_words, feature)
+  return if feature[:lower].nil?
+  
   saved_words.each do |word|
     puts "#{word}\t#{feature[:name]}\t#{feature[:lower]}\t#{feature[:upper]}"
   end
@@ -33,7 +35,11 @@ ARGF.each do |line|
     if feature != current_feature[:name]
       dump_saved_words(saved_words, current_feature)
       saved_words.clear
-      current_feature[:name] = feature
+      current_feature = {
+        :name => feature,
+        :lower => nil,
+        :upper => nil
+      }
     end
     
     saved_words << word
