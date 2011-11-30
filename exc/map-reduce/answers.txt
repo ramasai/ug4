@@ -1,7 +1,7 @@
 Extreme Computing
 =================
 
-  Name: Christopher Brown
+Name: Christopher Brown
 Matric: 0824586
 
 Task One
