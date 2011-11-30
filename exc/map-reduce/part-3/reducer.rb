@@ -3,6 +3,14 @@
 # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
 STDOUT.sync = true
 
+class String
+  def chars
+    chars = []
+    0.upto(self.length-1) { |i| chars << self[i] }
+    chars
+  end
+end
+
 # Simple bloom filter implementation
 #
 # The hashing is dreadful and wrong but it works well enough.
