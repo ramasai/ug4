@@ -4,7 +4,7 @@
 STDOUT.sync = true
 
 ARGF.each do |line|
-  word, upper = line.split "\t"
+  word, upper = line.split
   upper = (upper == "1")
   
   word.capitalize! if upper

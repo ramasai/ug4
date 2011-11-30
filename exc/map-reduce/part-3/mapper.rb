@@ -26,7 +26,7 @@ def features(word)
 end
 
 ARGF.each do |line|
-  words = line.chomp.split "\t"
+  words = line.chomp.split
 
   words.each do |word|
     word_features = features(word)

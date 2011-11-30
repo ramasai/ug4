@@ -13,7 +13,7 @@ STDOUT.sync = true
 #
 
 ARGF.each do |line|
-  tokens = line.split "\t"
+  tokens = line.split
   
   case tokens.length
   when 2

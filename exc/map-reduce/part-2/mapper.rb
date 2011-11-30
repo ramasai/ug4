@@ -33,7 +33,7 @@ end
 # in the mapper and send them in blocks.
 #
 ARGF.each do |line|
-  words = line.chomp.split "\t"
+  words = line.chomp.split
 
   words.each do |word|
     uppercase = word.match(/[A-Z]/) ? 1 : 0
