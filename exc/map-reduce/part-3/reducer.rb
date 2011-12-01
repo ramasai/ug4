@@ -3,14 +3,6 @@
 # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
 STDOUT.sync = true
 
-class String
-  def chars
-    chars = []
-    0.upto(self.length-1) { |i| chars << self[i] }
-    chars
-  end
-end
-
 # Simple bloom filter implementation
 #
 # The hashing is dreadful and wrong but it works well enough.
@@ -42,6 +34,13 @@ end
 bloom_filter = BloomFilter.new(2000)
 used_words = []
 
+# We want to make sure that the features of a word are only outputted once
+# even though there may be multiple occurences of the word in the text.
+#
+# We use a bloom filter to check if we have seen the line before. This prevents
+# the O(n) check of the inclusion of the line in an used_words array. Since
+# a bloom filter is not 100% accurate we must check the array if the bloom filter
+# thinks we have seen the line before.
 ARGF.each do |line|
   if !bloom_filter.maybe_include?(line)
     puts line
@@ -54,4 +53,3 @@ ARGF.each do |line|
     end
   end
 end
-

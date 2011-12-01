@@ -26,8 +26,10 @@ def features(word)
 end
 
 ARGF.each do |line|
+  # Splot the line into words
   words = line.chomp.split
 
+  # Output the features of each word.
   words.each do |word|
     word_features = features(word)
 

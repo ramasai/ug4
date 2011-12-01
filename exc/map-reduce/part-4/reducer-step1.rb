@@ -18,6 +18,7 @@ current_feature = {
 
 saved_words = []
 
+# Output the current list of saved words to STDOUT.
 def dump_saved_words(saved_words, feature)
   return if feature[:lower].nil?
   
@@ -32,6 +33,8 @@ ARGF.each do |line|
   if tokens.length == 2
     feature, word = tokens
         
+    # If this is a new feature then we should reset the state of the
+    # script and output all of the saved words.
     if feature != current_feature[:name]
       dump_saved_words(saved_words, current_feature)
       saved_words.clear
@@ -46,11 +49,14 @@ ARGF.each do |line|
   else
     feature, lower, upper = tokens
     
+    # If this is a new feature then we should reset the state of the
+    # script and output all of the saved words.
     if feature != current_feature[:name]
       dump_saved_words(saved_words, current_feature)
       saved_words.clear
     end
     
+    # Set the current feature to the new one.
     current_feature = {
       :name => feature,
       :lower => lower,
@@ -59,4 +65,5 @@ ARGF.each do |line|
   end
 end
 
+# Make sure that the last word in the file is also outputted.
 dump_saved_words(saved_words, current_feature)
