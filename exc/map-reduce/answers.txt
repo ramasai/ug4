@@ -27,584 +27,584 @@ Part 1
 
 ### bayes.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Returns the different lower case features of the word.
-  #
-  # These are:
-  #
-  # * The word itself.
-  # * The first 2 letters of the word.
-  # * The first 3 letters of the word.
-  # * The last 2 letters of the word.
-  # * The last 3 letters of the word.
-  #
-  def features(word)
-    [
-      word,
-      word[0..1],
-      word[0..2],
-      word[-2..-1],
-      word[-3..-1]
-    ].map do |w|
-      w.downcase unless w.nil?
-    end.compact
-  end
-
-  # Takes a file and returns a list of all of the words that are in the file.
-  def parse_file(path)
-    File.new(path).read.split
-  end
-
-  # Show some help if the user gets it wrong.
-  unless ARGV.length == 2
-    puts "Usage: #{$0} [training-file] [testing-file]"
-    exit 1
-  end
-
-  # Create some lists of the training and testing words.
-  TRAINING_WORDS = parse_file(ARGV[0])
-  TESTING_WORDS = parse_file(ARGV[1])
-
-  # Create a hash with a default value that has empty counts.
-  words = Hash.new do |hash, key|
-    hash[key] = Array.new(2, 0)
-  end
-
-  # Loop through each of the training words and increment the counts for each
-  # feature of the word.
-  TRAINING_WORDS.each do |word|
-    # Does the word have any capital letters in it?
-    uppercase = word.match(/^[A-Z]/) ? 1 : 0
-    word_features = features(word)
-
-    word_features.each do |feature|
-      words[feature][uppercase] += 1
+    # Returns the different lower case features of the word.
+    #
+    # These are:
+    #
+    # * The word itself.
+    # * The first 2 letters of the word.
+    # * The first 3 letters of the word.
+    # * The last 2 letters of the word.
+    # * The last 3 letters of the word.
+    #
+    def features(word)
+      [
+        word,
+        word[0..1],
+        word[0..2],
+        word[-2..-1],
+        word[-3..-1]
+      ].map do |w|
+        w.downcase unless w.nil?
+      end.compact
     end
-  end
 
-  # Let's create a new hash to store the probabilities of the case given the
-  # feature of the word.
-  probabilities = Hash.new do |hash, key|
-    hash[key] = Array.new(2, 0)
-  end
-
-  # And then we'll loop through our counts to create the model for using with
-  # Naive Bayes.
-  words.each_key do |key|
-    sum = words[key].inject(:+)
-
-    (0..1).each do |i|
-      value = words[key][i].to_f/sum
-      probabilities[key][i] = value
+    # Takes a file and returns a list of all of the words that are in the file.
+    def parse_file(path)
+      File.new(path).read.split
     end
-  end
 
-  # Okay, so we have our model. Lets get capitalising some words! This function
-  # takes a word and then words out if it should be upper or lower case. If it
-  # should be upper case then it returns 1 and if lower case then a 0. It also
-  # takes the model that it should base these predicions off.
-  #
-  def word_case(word, model)
-    word_features = features(word)
+    # Show some help if the user gets it wrong.
+    unless ARGV.length == 2
+      puts "Usage: #{$0} [training-file] [testing-file]"
+      exit 1
+    end
 
-    # The probabilities of each feature being lower or upper case.
-    lower_prob = []
-    upper_prob = []
+    # Create some lists of the training and testing words.
+    TRAINING_WORDS = parse_file(ARGV[0])
+    TESTING_WORDS = parse_file(ARGV[1])
 
-    # Retrieve the probabilities.
-    word_features.each do |feature|
-      # If we've never seen this feature before in our model.
-      if !model.has_key?(feature)
-        lower_prob << 1
-        upper_prob << 1
-        next
+    # Create a hash with a default value that has empty counts.
+    words = Hash.new do |hash, key|
+      hash[key] = Array.new(2, 0)
+    end
+
+    # Loop through each of the training words and increment the counts for each
+    # feature of the word.
+    TRAINING_WORDS.each do |word|
+      # Does the word have any capital letters in it?
+      uppercase = word.match(/^[A-Z]/) ? 1 : 0
+      word_features = features(word)
+
+      word_features.each do |feature|
+        words[feature][uppercase] += 1
+      end
+    end
+
+    # Let's create a new hash to store the probabilities of the case given the
+    # feature of the word.
+    probabilities = Hash.new do |hash, key|
+      hash[key] = Array.new(2, 0)
+    end
+
+    # And then we'll loop through our counts to create the model for using with
+    # Naive Bayes.
+    words.each_key do |key|
+      sum = words[key].inject(:+)
+
+      (0..1).each do |i|
+        value = words[key][i].to_f/sum
+        probabilities[key][i] = value
+      end
+    end
+
+    # Okay, so we have our model. Lets get capitalising some words! This function
+    # takes a word and then words out if it should be upper or lower case. If it
+    # should be upper case then it returns 1 and if lower case then a 0. It also
+    # takes the model that it should base these predicions off.
+    #
+    def word_case(word, model)
+      word_features = features(word)
+
+      # The probabilities of each feature being lower or upper case.
+      lower_prob = []
+      upper_prob = []
+
+      # Retrieve the probabilities.
+      word_features.each do |feature|
+        # If we've never seen this feature before in our model.
+        if !model.has_key?(feature)
+          lower_prob << 1
+          upper_prob << 1
+          next
+        end
+
+        lower_prob << model[feature][0]
+        upper_prob << model[feature][1]
       end
 
-      lower_prob << model[feature][0]
-      upper_prob << model[feature][1]
+      # Calculate the product of them.
+      lower = lower_prob.inject(:*)
+      upper = upper_prob.inject(:*)
+
+      # Return the class of the larger one.
+      upper > lower ? 1 : 0
     end
 
-    # Calculate the product of them.
-    lower = lower_prob.inject(:*)
-    upper = upper_prob.inject(:*)
+    # For each of the words in the test data we now classify it and print it out.
+    TESTING_WORDS.each do |word|
+      # Should it be upper case?
+      upper = word_case(word, probabilities) > 0
 
-    # Return the class of the larger one.
-    upper > lower ? 1 : 0
-  end
+      # Capitalise the word if it should be uppercase
+      word.capitalize! if upper
 
-  # For each of the words in the test data we now classify it and print it out.
-  TESTING_WORDS.each do |word|
-    # Should it be upper case?
-    upper = word_case(word, probabilities) > 0
-
-    # Capitalise the word if it should be uppercase
-    word.capitalize! if upper
-
-    # We're done! Output the word.
-    puts word
-  end
+      # We're done! Output the word.
+      puts word
+    end
 
 Part 2
 ------
 
 ### run.sh
 
-  #/usr/bin/env sh
+    #/usr/bin/env sh
 
-  hadoop fs -rmr /user/s0824586/coursework/output-part2
+    hadoop fs -rmr /user/s0824586/coursework/output-part2
 
-  hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
-                -jobconf mapred.job.name="s0824586 - Part 2" \
-                -input /user/s0824586/coursework/input-train-small \
-                -output /user/s0824586/coursework/output-part2 \
-                -mapper mapper.rb \
-                -file mapper.rb \
-                -reducer reducer.rb \
-                -file reducer.rb
+    hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
+                  -jobconf mapred.job.name="s0824586 - Part 2" \
+                  -input /user/s0824586/coursework/input-train-small \
+                  -output /user/s0824586/coursework/output-part2 \
+                  -mapper mapper.rb \
+                  -file mapper.rb \
+                  -reducer reducer.rb \
+                  -file reducer.rb
 
 ### mapper.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Returns the different features of the word.
-  #
-  # These are:
-  #
-  # * The word itself.
-  # * The first 2 letters of the word.
-  # * The first 3 letters of the word.
-  # * The last 2 letters of the word.
-  # * The last 3 letters of the word.
-  #
-  def features(word)
-    [
-      word,
-      word[0..1],
-      word[0..2],
-      word[-2..-1],
-      word[-3..-1]
-    ].map do |w|
-      w.downcase unless w.nil?
-    end.compact
-  end
+    # Returns the different features of the word.
+    #
+    # These are:
+    #
+    # * The word itself.
+    # * The first 2 letters of the word.
+    # * The first 3 letters of the word.
+    # * The last 2 letters of the word.
+    # * The last 3 letters of the word.
+    #
+    def features(word)
+      [
+        word,
+        word[0..1],
+        word[0..2],
+        word[-2..-1],
+        word[-3..-1]
+      ].map do |w|
+        w.downcase unless w.nil?
+      end.compact
+    end
 
-  # Naive Bayes
-  #
-  # Loop through the words in the input and split them up into their features. We
-  # then emit a tuple with the feature, whether or not the word is uppercase or
-  # not, and the count. The count may just be 1 or we could cache some of these
-  # in the mapper and send them in blocks.
-  #
-  ARGF.each do |line|
-    words = line.chomp.split
+    # Naive Bayes
+    #
+    # Loop through the words in the input and split them up into their features. We
+    # then emit a tuple with the feature, whether or not the word is uppercase or
+    # not, and the count. The count may just be 1 or we could cache some of these
+    # in the mapper and send them in blocks.
+    #
+    ARGF.each do |line|
+      words = line.chomp.split
 
-    words.each do |word|
-      uppercase = word.match(/[A-Z]/) ? 1 : 0
-      word_features = features(word)
+      words.each do |word|
+        uppercase = word.match(/[A-Z]/) ? 1 : 0
+        word_features = features(word)
 
-      word_features.each do |feature|
-        puts "#{feature}\t#{uppercase}\t1"
+        word_features.each do |feature|
+          puts "#{feature}\t#{uppercase}\t1"
+        end
       end
     end
-  end
   
 ### reducer.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Create a hash with a default value that has empty counts.
-  words = Hash.new do |hash, key|
-    hash[key] = Array.new(2, 0)
-  end
-
-  # Naive Bayes
-  #
-  # Loop through each tuple in the input and keep a count of how many times it
-  # has appeared in upper and lower case words.
-  #
-  # Once the sequence of the same word is finished then we output the
-  # probabilities of the words being upper or lower case in the format:
-  #
-  # <feature><tab><lower probability><tab><upper probability>
-  #
-  current_feature = nil
-
-  ARGF.each do |line|
-    feature, uppercase, count = line.chomp.split
-  
-    # If we have reached a new word in the input then output all of the current words.
-    unless feature == current_feature
-      words.each_key do |key|
-        sum = words[key][0] + words[key][1]
-        lower = words[key][0].to_f/sum
-        upper = words[key][1].to_f/sum
-
-        puts "#{key}\t#{lower}\t#{upper}"
-      end
-    
-      # Set the new feature to be the current one.
-      current_feature = feature
-    
-      # Clear out the existing words.
-      words.clear
+    # Create a hash with a default value that has empty counts.
+    words = Hash.new do |hash, key|
+      hash[key] = Array.new(2, 0)
     end
 
-    # Change the strings to an integers.
-    uppercase = uppercase.to_i
-    count = count.to_i
+    # Naive Bayes
+    #
+    # Loop through each tuple in the input and keep a count of how many times it
+    # has appeared in upper and lower case words.
+    #
+    # Once the sequence of the same word is finished then we output the
+    # probabilities of the words being upper or lower case in the format:
+    #
+    # <feature><tab><lower probability><tab><upper probability>
+    #
+    current_feature = nil
 
-    words[feature][uppercase] += count
-  end
+    ARGF.each do |line|
+      feature, uppercase, count = line.chomp.split
+  
+      # If we have reached a new word in the input then output all of the current words.
+      unless feature == current_feature
+        words.each_key do |key|
+          sum = words[key][0] + words[key][1]
+          lower = words[key][0].to_f/sum
+          upper = words[key][1].to_f/sum
 
-  # Remember to output the last word in the file.
-  words.each_key do |key|
-    sum = words[key][0] + words[key][1]
-    lower = words[key][0].to_f/sum
-    upper = words[key][1].to_f/sum
+          puts "#{key}\t#{lower}\t#{upper}"
+        end
+    
+        # Set the new feature to be the current one.
+        current_feature = feature
+    
+        # Clear out the existing words.
+        words.clear
+      end
 
-    puts "#{key}\t#{lower}\t#{upper}"
-  end
+      # Change the strings to an integers.
+      uppercase = uppercase.to_i
+      count = count.to_i
+
+      words[feature][uppercase] += count
+    end
+
+    # Remember to output the last word in the file.
+    words.each_key do |key|
+      sum = words[key][0] + words[key][1]
+      lower = words[key][0].to_f/sum
+      upper = words[key][1].to_f/sum
+
+      puts "#{key}\t#{lower}\t#{upper}"
+    end
 
 Part 3
 ------
 
 ### run.sh
 
-  #/usr/bin/env sh
+    #/usr/bin/env sh
 
-  # Delete the output folder
-  hadoop fs -rmr /user/s0824586/coursework/output-part3
+    # Delete the output folder
+    hadoop fs -rmr /user/s0824586/coursework/output-part3
 
-  # Run the task
-  hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
-                -jobconf mapred.job.name="s0824586 - Part 3" \
-                -input /user/s0824586/coursework/input-test \
-                -output /user/s0824586/coursework/output-part3 \
-                -mapper mapper.rb \
-                -file mapper.rb \
-                -reducer reducer.rb \
-                -file reducer.rb
+    # Run the task
+    hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
+                  -jobconf mapred.job.name="s0824586 - Part 3" \
+                  -input /user/s0824586/coursework/input-test \
+                  -output /user/s0824586/coursework/output-part3 \
+                  -mapper mapper.rb \
+                  -file mapper.rb \
+                  -reducer reducer.rb \
+                  -file reducer.rb
 
 ### mapper.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Returns the different features of the word.
-  #
-  # These are:
-  #
-  # * The word itself.
-  # * The first 2 letters of the word.
-  # * The first 3 letters of the word.
-  # * The last 2 letters of the word.
-  # * The last 3 letters of the word.
-  #
-  def features(word)
-    [
-      word,
-      word[0..1],
-      word[0..2],
-      word[-2..-1],
-      word[-3..-1]
-    ].map do |w|
-      w.downcase unless w.nil?
-    end.compact
-  end
+    # Returns the different features of the word.
+    #
+    # These are:
+    #
+    # * The word itself.
+    # * The first 2 letters of the word.
+    # * The first 3 letters of the word.
+    # * The last 2 letters of the word.
+    # * The last 3 letters of the word.
+    #
+    def features(word)
+      [
+        word,
+        word[0..1],
+        word[0..2],
+        word[-2..-1],
+        word[-3..-1]
+      ].map do |w|
+        w.downcase unless w.nil?
+      end.compact
+    end
 
-  ARGF.each do |line|
-    # Splot the line into words
-    words = line.chomp.split
+    ARGF.each do |line|
+      # Splot the line into words
+      words = line.chomp.split
 
-    # Output the features of each word.
-    words.each do |word|
-      word_features = features(word)
+      # Output the features of each word.
+      words.each do |word|
+        word_features = features(word)
 
-      word_features.each do |feature|
-        puts "#{word}\t#{feature}"
+        word_features.each do |feature|
+          puts "#{word}\t#{feature}"
+        end
       end
     end
-  end
 
 ### reducer.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Simple bloom filter implementation
-  #
-  # The hashing is dreadful and wrong but it works well enough.
-  class BloomFilter
-    def initialize(size)
-      @size = size
-      @buffer = Array.new(size, false)
-    end
+    # Simple bloom filter implementation
+    #
+    # The hashing is dreadful and wrong but it works well enough.
+    class BloomFilter
+      def initialize(size)
+        @size = size
+        @buffer = Array.new(size, false)
+      end
   
-    def insert(element)
-      hash(element).each { |i| @buffer[i] = true}
-    end
+      def insert(element)
+        hash(element).each { |i| @buffer[i] = true}
+      end
   
-    def maybe_include?(element)
-      hash(element).map { |i| @buffer[i] }.inject(:&)
-    end
+      def maybe_include?(element)
+        hash(element).map { |i| @buffer[i] }.inject(:&)
+      end
   
-    private :hash
-    def hash(element)
-      letters = element.chars.map { |e| ?e }
+      private :hash
+      def hash(element)
+        letters = element.chars.map { |e| ?e }
     
-      [
-        letters.inject(:+),
-        letters.inject(:*)
-      ].map { |h| h % @size }
-    end
-  end
-
-  bloom_filter = BloomFilter.new(2000)
-  used_words = []
-
-  # We want to make sure that the features of a word are only outputted once
-  # even though there may be multiple occurences of the word in the text.
-  #
-  # We use a bloom filter to check if we have seen the line before. This prevents
-  # the O(n) check of the inclusion of the line in an used_words array. Since
-  # a bloom filter is not 100% accurate we must check the array if the bloom filter
-  # thinks we have seen the line before.
-  ARGF.each do |line|
-    if !bloom_filter.maybe_include?(line)
-      puts line
-      bloom_filter.insert(line)
-      used_words << line
-    else
-      unless used_words.include? line
-        puts line
-        used_words << line
+        [
+          letters.inject(:+),
+          letters.inject(:*)
+        ].map { |h| h % @size }
       end
     end
-  end
+
+    bloom_filter = BloomFilter.new(2000)
+    used_words = []
+
+    # We want to make sure that the features of a word are only outputted once
+    # even though there may be multiple occurences of the word in the text.
+    #
+    # We use a bloom filter to check if we have seen the line before. This prevents
+    # the O(n) check of the inclusion of the line in an used_words array. Since
+    # a bloom filter is not 100% accurate we must check the array if the bloom filter
+    # thinks we have seen the line before.
+    ARGF.each do |line|
+      if !bloom_filter.maybe_include?(line)
+        puts line
+        bloom_filter.insert(line)
+        used_words << line
+      else
+        unless used_words.include? line
+          puts line
+          used_words << line
+        end
+      end
+    end
 
 Part 4
 ------
 
 ### run.sh
 
-  #/usr/bin/env sh
+    #/usr/bin/env sh
 
-  # Delete the output folder
-  hadoop fs -rmr /user/s0824586/coursework/output-part4-step-1
-  hadoop fs -rmr /user/s0824586/coursework/output-part4-step-2
+    # Delete the output folder
+    hadoop fs -rmr /user/s0824586/coursework/output-part4-step-1
+    hadoop fs -rmr /user/s0824586/coursework/output-part4-step-2
 
-  # Run the task
-  hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
-                -jobconf mapred.job.name="s0824586 - Part 4 - Step 1" \
-                -input /user/s0824586/coursework/output-part2 \
-                -input /user/s0824586/coursework/output-part3 \
-                -output /user/s0824586/coursework/output-part4-step-1 \
-                -mapper mapper-step1.rb \
-                -file mapper-step1.rb \
-                -reducer reducer-step1.rb \
-                -file reducer-step1.rb \
+    # Run the task
+    hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
+                  -jobconf mapred.job.name="s0824586 - Part 4 - Step 1" \
+                  -input /user/s0824586/coursework/output-part2 \
+                  -input /user/s0824586/coursework/output-part3 \
+                  -output /user/s0824586/coursework/output-part4-step-1 \
+                  -mapper mapper-step1.rb \
+                  -file mapper-step1.rb \
+                  -reducer reducer-step1.rb \
+                  -file reducer-step1.rb \
 
-  # Run the task
-  hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
-                -jobconf mapred.job.name="s0824586 - Part 4 - Step 2" \
-                -input /user/s0824586/coursework/output-part4-step-1 \
-                -output /user/s0824586/coursework/output-part4-step-2 \
-                -mapper cat \
-                -reducer reducer-step2.rb \
-                -file reducer-step2.rb \
+    # Run the task
+    hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
+                  -jobconf mapred.job.name="s0824586 - Part 4 - Step 2" \
+                  -input /user/s0824586/coursework/output-part4-step-1 \
+                  -output /user/s0824586/coursework/output-part4-step-2 \
+                  -mapper cat \
+                  -reducer reducer-step2.rb \
+                  -file reducer-step2.rb \
 
 ### mapper-step1.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # There are two different formats of data that will be coming into this mapper.
-  # 
-  # Feature Probabilities:
-  #   <feature> <lower probability> <upper probability>
-  #
-  # Word Features:
-  #   <word> <feature>
-  #
+    # There are two different formats of data that will be coming into this mapper.
+    # 
+    # Feature Probabilities:
+    #   <feature> <lower probability> <upper probability>
+    #
+    # Word Features:
+    #   <word> <feature>
+    #
 
-  ARGF.each do |line|
-    tokens = line.split
+    ARGF.each do |line|
+      tokens = line.split
   
-    case tokens.length
-    when 2
-      puts tokens.reverse.join "\t"
-    when 3
-      puts line
+      case tokens.length
+      when 2
+        puts tokens.reverse.join "\t"
+      when 3
+        puts line
+      end
     end
-  end
 
 ### reducer-step1.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # This reducer is responsible for creating tuples of the form:
-  #
-  #   <word> <feature> <upper probability> <lower probability>
-  #
-  # For further processing in the next stage.
-  #
+    # This reducer is responsible for creating tuples of the form:
+    #
+    #   <word> <feature> <upper probability> <lower probability>
+    #
+    # For further processing in the next stage.
+    #
 
-  current_feature = {
-    :name => nil,
-    :lower => 0,
-    :upper => 0
-  }
+    current_feature = {
+      :name => nil,
+      :lower => 0,
+      :upper => 0
+    }
 
-  saved_words = []
+    saved_words = []
 
-  # Output the current list of saved words to STDOUT.
-  def dump_saved_words(saved_words, feature)
-    return if feature[:lower].nil?
+    # Output the current list of saved words to STDOUT.
+    def dump_saved_words(saved_words, feature)
+      return if feature[:lower].nil?
   
-    saved_words.each do |word|
-      puts "#{word}\t#{feature[:name]}\t#{feature[:lower]}\t#{feature[:upper]}"
+      saved_words.each do |word|
+        puts "#{word}\t#{feature[:name]}\t#{feature[:lower]}\t#{feature[:upper]}"
+      end
     end
-  end
 
-  ARGF.each do |line|
-    tokens = line.split
+    ARGF.each do |line|
+      tokens = line.split
   
-    if tokens.length == 2
-      feature, word = tokens
+      if tokens.length == 2
+        feature, word = tokens
         
-      # If this is a new feature then we should reset the state of the
-      # script and output all of the saved words.
-      if feature != current_feature[:name]
-        dump_saved_words(saved_words, current_feature)
-        saved_words.clear
+        # If this is a new feature then we should reset the state of the
+        # script and output all of the saved words.
+        if feature != current_feature[:name]
+          dump_saved_words(saved_words, current_feature)
+          saved_words.clear
+          current_feature = {
+            :name => feature,
+            :lower => nil,
+            :upper => nil
+          }
+        end
+    
+        saved_words << word
+      else
+        feature, lower, upper = tokens
+    
+        # If this is a new feature then we should reset the state of the
+        # script and output all of the saved words.
+        if feature != current_feature[:name]
+          dump_saved_words(saved_words, current_feature)
+          saved_words.clear
+        end
+    
+        # Set the current feature to the new one.
         current_feature = {
           :name => feature,
-          :lower => nil,
-          :upper => nil
+          :lower => lower,
+          :upper => upper
         }
       end
-    
-      saved_words << word
-    else
-      feature, lower, upper = tokens
-    
-      # If this is a new feature then we should reset the state of the
-      # script and output all of the saved words.
-      if feature != current_feature[:name]
-        dump_saved_words(saved_words, current_feature)
-        saved_words.clear
-      end
-    
-      # Set the current feature to the new one.
-      current_feature = {
-        :name => feature,
-        :lower => lower,
-        :upper => upper
-      }
     end
-  end
 
-  # Make sure that the last word in the file is also outputted.
-  dump_saved_words(saved_words, current_feature)
+    # Make sure that the last word in the file is also outputted.
+    dump_saved_words(saved_words, current_feature)
 
 ### reducer-step2.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  current_word = nil
-  lower_product = 1
-  upper_product = 1
+    current_word = nil
+    lower_product = 1
+    upper_product = 1
 
-  # This script takes lines of format:
-  #
-  #   <word> <feature> <lower probability> <upper probability>
-  #
-  # It then takes all of the values for a word and outputs the following:
-  #
-  #   <word> <0 or 1>
-  #
-  # The second value is 0 if the word should be lower case and 1 if the word
-  # should be upper case.
-  ARGF.each do |line|
-    word, feature, lower, upper = line.split
-    current_word = word if current_word.nil?
+    # This script takes lines of format:
+    #
+    #   <word> <feature> <lower probability> <upper probability>
+    #
+    # It then takes all of the values for a word and outputs the following:
+    #
+    #   <word> <0 or 1>
+    #
+    # The second value is 0 if the word should be lower case and 1 if the word
+    # should be upper case.
+    ARGF.each do |line|
+      word, feature, lower, upper = line.split
+      current_word = word if current_word.nil?
   
-    unless current_word == word
-      is_upper = upper_product > lower_product
-      puts "#{current_word}\t#{is_upper ? 1 : 0}"
+      unless current_word == word
+        is_upper = upper_product > lower_product
+        puts "#{current_word}\t#{is_upper ? 1 : 0}"
     
-      current_word = word
-      upper_product = 1
-      lower_product = 1
-    end
+        current_word = word
+        upper_product = 1
+        lower_product = 1
+      end
   
-    lower_product *= lower.to_f
-    upper_product *= upper.to_f
-  end
+      lower_product *= lower.to_f
+      upper_product *= upper.to_f
+    end
 
-  # Make sure we output the last word.
-  is_upper = upper_product > lower_product
-  puts "#{current_word}\t#{is_upper ? 1 : 0}"
+    # Make sure we output the last word.
+    is_upper = upper_product > lower_product
+    puts "#{current_word}\t#{is_upper ? 1 : 0}"
   
 Part 5
 ------
 
 ### run.sh
 
-  #/usr/bin/env sh
+    #/usr/bin/env sh
 
-  # Delete the output folder
-  hadoop fs -rmr /user/s0824586/coursework/output-part5
+    # Delete the output folder
+    hadoop fs -rmr /user/s0824586/coursework/output-part5
 
-  # Run the task
-  hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
-                -jobconf mapred.job.name="s0824586 - Part 5" \
-                -input /user/s0824586/coursework/output-part4-step-2 \
-                -output /user/s0824586/coursework/output-part5 \
-                -mapper mapper.rb \
-                -file mapper.rb \
-                -reducer cat
+    # Run the task
+    hadoop jar /opt/hadoop/hadoop-0.20.2/contrib/streaming/hadoop-0.20.2-streaming.jar \
+                  -jobconf mapred.job.name="s0824586 - Part 5" \
+                  -input /user/s0824586/coursework/output-part4-step-2 \
+                  -output /user/s0824586/coursework/output-part5 \
+                  -mapper mapper.rb \
+                  -file mapper.rb \
+                  -reducer cat
 
-  rm ../output/*
-  hadoop fs -copyToLocal /user/s0824586/coursework/output-part5/* ../output
-  cat ../output/* > ../output-new
+    rm ../output/*
+    hadoop fs -copyToLocal /user/s0824586/coursework/output-part5/* ../output
+    cat ../output/* > ../output-new
 
 ### mapper.rb
 
-  #!/usr/bin/env ruby
+    #!/usr/bin/env ruby
 
-  # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
-  STDOUT.sync = true
+    # Make sure that Ruby doesn't try and `help` us by buffering the output at all.
+    STDOUT.sync = true
 
-  # Really simple script that takes a tuple and uppercases the first
-  # element if the second element is 1.
-  ARGF.each do |line|
-    word, upper = line.split
-    upper = (upper == "1")
+    # Really simple script that takes a tuple and uppercases the first
+    # element if the second element is 1.
+    ARGF.each do |line|
+      word, upper = line.split
+      upper = (upper == "1")
 
-    word.capitalize! if upper
+      word.capitalize! if upper
 
-    puts word
-  end
+      puts word
+    end
