@@ -9,10 +9,10 @@ Task One
 
 The first task is to write a simple Naive Bayes classifier for the
 capitalisation of words. The first thing that I do is loop through each
-of the training words and split it up into it's features. I made the
-decision to remove any duplicates from the features list in the case of
-short words with 2 or 3 letters as this would give unfair weighting to
-features that were more common in short words. This could have had
+of the training words and split them up into their features. I made the
+decision to remove any duplicates from the features list as in the case
+of short words with 2 or 3 letters since this would give unfair weighting
+to features that were more common in short words. This could have had
 undesirable side effects as many of these short words were acronyms
 which are almost always upper case.
 
@@ -194,12 +194,12 @@ programming paradigm the output of this step is completely unsorted and
 has lost any of the duplicates that were present in the original test
 text. To check that we have the same output as the Unix version of the
 classifier we can simply check to see that if we sort and remove
-duplicates of the output of the Unix classifier that we get the same file
-as the output from Hadoop. We are able to do this because there is no
-possibility of Naive Bayes taking one instance of a word and classifying
-it differently as another instance of the word and as such the sorted,
-de-duplicated lists will be the same and so the classifiers return the
-same result.
+duplicates of the output from the Unix classifier that we get the same
+file as the output from Hadoop. We are able to do this because there is
+no possibility of Naive Bayes taking one instance of a word and
+classifying it differently as another instance of the word and as such
+the sorted, de-duplicated lists will be the same and so the classifiers
+return the same result.
 
 Code
 ====
