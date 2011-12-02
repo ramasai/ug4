@@ -8,6 +8,22 @@ inline void draw_pixel(int x, int y)
 	glEnd();
 }
 
+float clampf(float i, int min, int max)
+{
+	if (i > max)
+	{
+		return (float)max;
+	}
+	else if (i < min)
+	{
+		return (float)min;
+	}
+	else
+	{
+		return i;
+	}
+}
+
 /*
  * Draws a line using the Midpoint line algorithm from (x0,y0) to (x1,y1).
  */

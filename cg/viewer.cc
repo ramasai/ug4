@@ -16,8 +16,8 @@
 
 using namespace std;
 
-const int nRows = 800;
-const int nCols = 600;
+const int nRows = 600;
+const int nCols = 800;
 
 int zBuffer[nCols][nRows];
 
@@ -104,7 +104,7 @@ void TriangleMesh::loadFile(char * filename)
 
 	for (unsigned int i = 0; i < _v.size(); i++)
 	{
-		for (int j = 0; j < 3; j++) _v[i][j] = (_v[i][j]-av[j])/range*400;
+		for (int j = 0; j < 3; j++) _v[i][j] = (_v[i][j]-av[j])/range*500;
 	}
 	cout << "trig " << _trig.size() << " vertices " << _v.size() << endl;
 	f.close();
@@ -256,6 +256,7 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	float min_y = fmin(vec1[1], vec2[1], vec3[1]);
 	float max_y = fmax(vec1[1], vec2[1], vec3[1]);
 
+
     float I_a = 0.25;
     float k_d = 0.4;
     float k_s = 3.0;
@@ -294,6 +295,8 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	{
 		for (int y = min_y; y < max_y; y++)
 		{
+			if (((x + nCols/2) > nCols) || ((y + nRows/2) > nRows)) continue;
+
             float alpha_num = ((vec2[1] - vec3[1]) * (x - vec3[0])) + ((vec3[0] - vec2[0]) * (y - vec3[1]));
             float alpha_dem = ((vec2[1] - vec3[1]) * (vec1[0] - vec3[0])) + ((vec3[0] - vec2[0]) * (vec1[1] - vec3[1]));
             float alpha = alpha_num/alpha_dem;
@@ -305,7 +308,12 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
             float gamma = 1 - alpha - beta;
 			float z = (alpha * vec1[2] + beta * vec2[2] + gamma * vec3[2]);
 
-			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
+			bool frontmost = zBuffer[x + nCols/2][y + nRows/2] < z;
+
+			if ((x > nCols/2) || (y > nRows/2))
+				cout << x + nCols/2 << " " << y + nRows/2 << endl;
+
+			if (alpha > 0 && beta > 0 && gamma > 0 && frontmost)
 			{
                 float ill = (alpha * I[0] + beta * I[1] + gamma * I[2]);
                 glColor3f(ill * 0.905882, ill * 0.419246, ill * 0.219607);
@@ -433,9 +441,9 @@ int main(int argc, char **argv)
 	}
 
 	glutInit(&argc, argv);
-	glutInitWindowSize(nRows, nCols);
+	glutInitWindowSize(nCols, nRows);
 	glutCreateWindow("Model Viewer");
-	gluOrtho2D(-nRows/2, nRows/2, -(float)nCols/2,  (float)nCols/2);
+	gluOrtho2D(-nCols/2, nCols/2, -(float)nRows/2,  (float)nRows/2);
 	glutDisplayFunc(display);// Callback function
 	glutKeyboardUpFunc(keyboard);
 	glutSpecialUpFunc(keyboardSpecial);
