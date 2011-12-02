@@ -256,8 +256,6 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 	float min_y = fmin(vec1[1], vec2[1], vec3[1]);
 	float max_y = fmax(vec1[1], vec2[1], vec3[1]);
 
-	//cout << "X: " << min_x << "," << max_x << endl;
-    
     float I_a = 0.25;
     float k_d = 0.4;
     float k_s = 3.0;
@@ -290,8 +288,6 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
         float specular = k_s * pow(dotProduct(_V[i], _R[i]), n);
         
         I[i] = max(ambient, 0.0f) + max(0.0f, diffuse) + max(0.0f, specular);
-        
-        //cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
     }
 
 	for (int x = min_x; x < max_x; x++)
@@ -313,7 +309,6 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 			{
                 float ill = (alpha * I[0] + beta * I[1] + gamma * I[2]);
                 glColor3f(ill * 0.905882, ill * 0.419246, ill * 0.219607);
-				//glColor3f(ill, ill, ill);
                 
 				draw_pixel(x,y);
 				zBuffer[x + nCols/2][y + nRows/2] = z;
@@ -329,9 +324,6 @@ void display()
 
 	int trignum = trig.trigNum();
 	Vector3f v1, v2, v3;
-
-	// change the colour of the pixel
-	glColor3f(0,0,0);
 
 	// for all the triangles, get the location of the vertices,
 	// project them on the xy plane, and color the corresponding pixel by white
@@ -354,28 +346,10 @@ void display()
 		rotate_vector_y(v2, rotation_y);
 		rotate_vector_y(v3, rotation_y);
 
-		//rotate_vector_y(camera, -rotation_y);
-
 		scale_vector(v1, scale, scale, scale);
 		scale_vector(v2, scale, scale, scale);
 		scale_vector(v3, scale, scale, scale);
 		
-		//
-		// colouring the pixels at the vertex location
-		// (just doing parallel projectiion to the xy plane.
-		// only use glBegin(GL_POINTS) for rendering the scene
-		//
-	   //glBegin(GL_POINTS);
-	   // glVertex2i((int)v1[0],(int)v1[1]);
-	   // glVertex2i((int)v2[0],(int)v2[1]);
-	   // glVertex2i((int)v3[0],(int)v3[1]);
-	   //glEnd();
-
-		//bresenhams_line((int)v1[0],(int)v1[1], (int)v2[0], (int)v2[1]);
-		//bresenhams_line((int)v2[0],(int)v2[1], (int)v3[0], (int)v3[1]);
-		//bresenhams_line((int)v3[0],(int)v3[1], (int)v1[0], (int)v1[1]);
-		//
-
 		draw(i, v1, v2, v3);
 	}
 
@@ -419,8 +393,6 @@ void keyboardSpecial(int key, int x, int y)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	//cout << "Key pressed: " << key << " - " << (int)key << " (" << x << "," << y << ")" << endl;
-
 	switch (key)
 	{
 		case 'w':
