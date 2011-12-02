@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <GLUT/glut.h>
+#include <GL/glut.h>
 #include <cstring>
 
 #include "viewer.h"
@@ -30,11 +30,14 @@ float rotation_x = 0;
 float rotation_y = 0;
 float rotation_z = 0;
 
-Vector3f camera(0.0f, 0.0f, 50.0f);
-Vector3f light(500.0f, 500.0f, 10000.0f);
+bool first_run = true;
+Vector3f camera(0.0f, 0.0f, 10000.0f);
+Vector3f light(0.0f, 0.0f, 10000.0f);
 
 TriangleMesh trig;
 map <int, vector<Triangle> > reverse_index;
+vector<vector<Triangle> > list_index;
+int list_index_var = 0;
 
 void TriangleMesh::loadFile(char * filename)
 {
@@ -191,19 +194,29 @@ float dotProduct(Vector3f a, Vector3f b)
 void vertexNormal(Vector3f &normal, Vector3f vertex)
 {
     int j = 0;
-    
-    for(std::vector<Vector3f>::iterator it = trig._v.begin(); it != trig._v.end(); ++it)
-    {
-        Vector3f vec = trig._v.at(j);
-        
-        if (vec == vertex)
-        {
-            break;
-        }
-        j++;
-    }
-    
-    vector<Triangle> v(reverse_index[j]);
+	vector<Triangle> v;
+
+	if (first_run)
+	{
+		for(std::vector<Vector3f>::iterator it = trig._v.begin(); it != trig._v.end(); ++it)
+		{
+			Vector3f vec = trig._v.at(j);
+			
+			if (vec == vertex)
+			{
+				break;
+			}
+			j++;
+		}
+
+		list_index.push_back(reverse_index[j]);
+		v = reverse_index[j];
+	}
+	else
+	{
+		v = list_index[list_index_var];
+		list_index_var++;
+	}
             
     float vecNormalX = 0;
     float vecNormalY = 0;
@@ -245,10 +258,10 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 
 	//cout << "X: " << min_x << "," << max_x << endl;
     
-    float I_a = 0.2;
-    float k_d = 0.1;
-    float k_s = 0.9;
-    int n = 2;
+    float I_a = 0.25;
+    float k_d = 0.4;
+    float k_s = 3.0;
+    int n = 15;
     
     Vector3f _L[3];
     Vector3f _V[3];
@@ -274,21 +287,17 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
         
         float ambient = I_a;
         float diffuse = k_d * dotProduct(_L[i], vecNormals[i]);
-        float specular = pow(k_s * dotProduct(_V[i], _R[i]), n);
+        float specular = k_s * pow(dotProduct(_V[i], _R[i]), n);
         
-        I[i] = ambient + diffuse + specular;
+        I[i] = max(ambient, 0.0f) + max(0.0f, diffuse) + max(0.0f, specular);
         
-//        cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
+        //cout << "Ambient: " << ambient << endl << "Diffuse: " << diffuse << endl << "Specular: " << specular << endl << endl;
     }
 
 	for (int x = min_x; x < max_x; x++)
 	{
 		for (int y = min_y; y < max_y; y++)
 		{
-//			float alpha = f(1,2,x,y,vec1,vec2,vec3) / f(1,2,vec1[0],vec1[1],vec1,vec2,vec3);
-//			float beta  = f(2,0,x,y,vec1,vec2,vec3) / f(2,0,vec2[0],vec2[1],vec1,vec2,vec3);
-//			float gamma = f(0,1,x,y,vec1,vec2,vec3) / f(0,1,vec3[0],vec3[1],vec1,vec2,vec3);
-            
             float alpha_num = ((vec2[1] - vec3[1]) * (x - vec3[0])) + ((vec3[0] - vec2[0]) * (y - vec3[1]));
             float alpha_dem = ((vec2[1] - vec3[1]) * (vec1[0] - vec3[0])) + ((vec3[0] - vec2[0]) * (vec1[1] - vec3[1]));
             float alpha = alpha_num/alpha_dem;
@@ -302,11 +311,9 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 
 			if (alpha > 0 && beta > 0 && gamma > 0 && zBuffer[x + nCols/2][y + nRows/2] < z)
 			{
-//                cout << "Sum is " << sum << endl;
-//                cout << "Alpha: " << alpha << endl << "Beta: " << beta << endl << "Gamma: " << gamma << endl << endl;
-
                 float ill = (alpha * I[0] + beta * I[1] + gamma * I[2]);
                 glColor3f(ill * 0.905882, ill * 0.419246, ill * 0.219607);
+				//glColor3f(ill, ill, ill);
                 
 				draw_pixel(x,y);
 				zBuffer[x + nCols/2][y + nRows/2] = z;
@@ -347,6 +354,8 @@ void display()
 		rotate_vector_y(v2, rotation_y);
 		rotate_vector_y(v3, rotation_y);
 
+		//rotate_vector_y(camera, -rotation_y);
+
 		scale_vector(v1, scale, scale, scale);
 		scale_vector(v2, scale, scale, scale);
 		scale_vector(v3, scale, scale, scale);
@@ -371,14 +380,16 @@ void display()
 	}
 
 	glFlush();// Output everything
+	first_run = false;
+	list_index_var = 0;
     
-//	for (int i = 0; i < nCols; i++)
-//	{
-//		for (int j = 0; j < nRows; j++)
-//		{
-//			zBuffer[i][j] = -99999.0f;
-//		}
-//	}
+	for (int i = 0; i < nCols; i++)
+	{
+		for (int j = 0; j < nRows; j++)
+		{
+			zBuffer[i][j] = -99999.0f;
+		}
+	}
 }
 
 void keyboardSpecial(int key, int x, int y)
@@ -387,15 +398,19 @@ void keyboardSpecial(int key, int x, int y)
 	{
 		case GLUT_KEY_UP:
 			rotation_x += 0.30;
+			rotate_vector_x(camera, -0.30);
 			break;
 		case GLUT_KEY_LEFT:
+			rotate_vector_y(camera, -0.30);
 			rotation_y += 0.30;
 			break;
 		case GLUT_KEY_DOWN:
 			rotation_x -= 0.30;
+			rotate_vector_x(camera, 0.30);
 			break;
 		case GLUT_KEY_RIGHT:
 			rotation_y -= 0.30;
+			rotate_vector_y(camera, 0.30);
 			break;
 	}
 
@@ -410,15 +425,19 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		case 'w':
 			translation_y += 10;
+			translate_vector(camera,0, -10, 0);
 			break;
 		case 'a':
 			translation_x -= 10;
+			translate_vector(camera, 10, 0, 0);
 			break;
 		case 's':
 			translation_y -= 10;
+			translate_vector(camera, 0, 10, 0);
 			break;
 		case 'd':
 			translation_x += 10;
+			translate_vector(camera, -10, 0, 0);
 			break;
 		case 'z':
 			scale -= 0.1;

@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <vector>
-#include <GLUT/glut.h>
+#include <GL/glut.h>
 
 #include <map>
 
