@@ -1,9 +1,3 @@
-/**
- * Not implemented:
- *
- *  - Antialiasing
- *  - Perspective transformation
- */
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -20,6 +14,7 @@ const int nRows = 600;
 const int nCols = 800;
 
 int zBuffer[nCols][nRows];
+float aBuffer[3][nCols][nRows];
 
 int translation_x = 0;
 int translation_y = 0;
@@ -316,9 +311,15 @@ void draw(int index, Vector3f vec1, Vector3f vec2, Vector3f vec3)
 			if (alpha > 0 && beta > 0 && gamma > 0 && frontmost)
 			{
                 float ill = (alpha * I[0] + beta * I[1] + gamma * I[2]);
-                glColor3f(ill * 0.905882, ill * 0.419246, ill * 0.219607);
-                
-				draw_pixel(x,y);
+
+				float illR = ill * 0.905882;
+				float illG = ill * 0.419246;
+				float illB = ill * 0.219607;
+
+				aBuffer[0][x][y] = illR;
+				aBuffer[1][x][y] = illG;
+				aBuffer[2][x][y] = illB;
+
 				zBuffer[x + nCols/2][y + nRows/2] = z;
 			}
 		}
@@ -360,6 +361,18 @@ void display()
 		
 		draw(i, v1, v2, v3);
 	}
+	for (int i = -nCols/2; i < nCols-1; i++)
+	{
+		for (int j = -nRows/2; j < nRows-1; j++)
+		{
+			float avgR = (aBuffer[0][i][j] + aBuffer[0][i+1][j] + aBuffer[0][i][j+1] + aBuffer[0][i+1][j+1])/4;
+			float avgG = (aBuffer[1][i][j] + aBuffer[1][i+1][j] + aBuffer[1][i][j+1] + aBuffer[1][i+1][j+1])/4;
+			float avgB = (aBuffer[2][i][j] + aBuffer[2][i+1][j] + aBuffer[2][i][j+1] + aBuffer[2][i+1][j+1])/4;
+
+		    glColor3f(avgR, avgG, avgB);
+			draw_pixel(i, j);
+		}
+	}
 
 	glFlush();// Output everything
 	first_run = false;
@@ -370,6 +383,9 @@ void display()
 		for (int j = 0; j < nRows; j++)
 		{
 			zBuffer[i][j] = -99999.0f;
+			aBuffer[0][i][j] = 0.0f;
+			aBuffer[1][i][j] = 0.0f;
+			aBuffer[2][i][j] = 0.0f;
 		}
 	}
 }
