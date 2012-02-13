@@ -1,0 +1,203 @@
+\documentclass[12pt, a4paper]{article}
+
+% VARIABLES
+% Change these to your essay.
+\def\thetitle{Parallel Programming Languages and Systems Exercise 1}
+\def\theauthor{Christopher Brown -- 0824586}
+
+% DOCUMENT LAYOUT
+\usepackage{geometry}
+% Change this if you have specific margins to use.
+% \geometry{a4paper, hmargin=0.8in}
+
+% FONTS
+\usepackage{fontspec}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont[Ligatures={Common},
+    BoldFont={Adobe Garamond Pro Bold},
+ItalicFont={Adobe Garamond Pro Italic}]{Adobe Garamond Pro}
+\setmonofont[Scale=0.8]{Monaco}
+
+% HEADERS
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+\rhead{0824586}
+\lhead{Parallel Programming Languages and Systems}
+\setlength{\headheight}{14.5pt}
+
+% HEADINGS
+\usepackage{sectsty}
+\usepackage[normalem]{ulem}
+\sectionfont{\rmfamily\mdseries\upshape\Large}
+\subsectionfont{\rmfamily\bfseries\upshape\normalsize}
+\subsubsectionfont{\rmfamily\mdseries\upshape\normalsize}
+
+% SYMBOLS & MATHS
+\usepackage{amsmath}
+\usepackage{marvosym}
+\usepackage{url}
+
+%% SOURCE CODE
+\usepackage{minted}
+
+\renewcommand{\theFancyVerbLine}{\ttfamily \textcolor[rgb]{0.5,0.5,0.5}{\small {\arabic{FancyVerbLine}}}}
+
+%% TODOs
+%\usepackage{todonotes}
+%\usepackage{cite}
+
+% PDF SETUP
+%\usepackage[dvipdfm,unicode,bookmarks,colorlinks,breaklinks,pdftitle={\thetitle},pdfauthor={\theauthor}]{hyperref}
+%\hypersetup{linkcolor=black,citecolor=black,filecolor=black,urlcolor=blue}
+
+% TITLE PAGE
+\title{\normalsize{\textit{Parallel Programming Languages \& Systems}} \\ \Huge Exercise Sheet 1}
+\author{\theauthor}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{enumerate}
+
+    \item
+
+        \begin{enumerate}
+
+            \item
+
+                Since there is only one ordering of these instructions then there can
+                be only one final state in this case. The values in this case are:
+                $x=5$, $y=2$.
+
+            \item
+
+                There are 6 different orderings of the instructions in this case:
+
+                \begin{itemize}
+
+                    \item S1, S2, S3
+                    \item S1, S3, S2
+                    \item S2, S1, S2
+                    \item S2, S3, S1
+                    \item S3, S1, S2
+                    \item S3, S2, S1
+
+                \end{itemize}
+
+                The values of $(x,y)$ for each of these cases are respectively:
+                ($x=5$, $y=2$), ($x=2$, $y=-3$), ($x=2$, $y=-3$), ($x=2$,
+                $y=-3$), ($x=2$, $y=-3$), ($x=-11$, $y=-8$).
+
+                Therefore there are 3 different possible final states.
+
+            \item
+
+                This code can never be successfully executed as it will never
+                terminate. This is due to the fact that the \texttt{await} can
+                never complete. The starting state of the system does not
+                satisfy the requirement and the only possible thing it can
+                execute instead is the S3 in the second block after which the
+                \texttt{await} conditional is still not satisfied. Therefore
+                this code will never terminate.
+
+        \end{enumerate}
+
+    \item
+
+        There are 7 different execution possibilities for this code:
+        2 which don't terminate and 5 which do. These can be loosely
+        categorised into 4 different categories based on the previous
+        sequence of events that led to the system being in that
+        state.
+
+        \begin{description}
+
+            \item[First Block Bias] \hfill \\
+                In order to get into a state that doesn't terminate the
+                system can execute the entire while loop (the await
+                cannot execute until the last \texttt{x=x-1} has been
+                executed) and then execute \texttt{y=y+1} before the
+                \texttt{await} can check again. This leads to the first
+                block being finished and the second block stuck on the
+                \texttt{await} because $x=0$ and $y=1$.
+
+            \vspace{0.2cm}
+            \item[Awake Executes] \hfill \\
+                This scenario starts the same way as above except this
+                time after the while loop is complete the
+                \texttt{await} is executed. This frees up the rest of
+                the second block for execution. Depending on the
+                execution order of \texttt{y=2} and \texttt{y=y+1} we
+                can either end up with ($x=8$, $y=2$) or ($x=8$,
+                $y=3$).
+
+            \vspace{0.2cm}
+            \item[Interrupted While Loop] \hfill \\
+                The next scenario involves the possibility that between
+                the last \texttt{x=x+1} and the while loop checking
+                that it is complete the \texttt{await} and the
+                \texttt{x=8} of the second block execute meaning that
+                the while loop continues.
+
+                After the while loop has run down again and depending
+                on how the final instructions of each block are
+                executed there are 3 states that the system can end up
+                in: ($x=2$, $y=3$), ($x=0$, $y=2$), or ($x=0$, $y=3$).
+
+            \vspace{0.2cm}
+            \item[Unlucky Y Assignment] \hfill \\
+                There is another possibility that is similar to the
+                scenario above. Instead of the while loop counting all
+                the way down a second time when \texttt{x} reaches
+                1 the final statement (\texttt{y=2}) is executed from
+                the second block. Since the while loop condition will
+                now never be satisfied - since integers do not over or
+                underflow in this environment - the system will never
+                terminate.
+
+        \end{description}
+
+    \item
+
+        My pseudocode solution to the critical section problem is shown below.
+
+        \begin{minted}[tabsize=2,linenos,gobble=12,xleftmargin=1cm]{c}
+            int l = 1;
+            co [i = 1 to n] {
+            while(something) {
+                while (l == 1 || DEC(l));
+                critical section;
+                l = 1;
+                non-critical section;
+              }
+            }
+        \end{minted}
+
+        The first thread to reach line 4 will use \texttt{DEC} to decrement the
+        lock variable (\texttt{l}) to 0 before entering the critical section
+        due to the lock being $\geq 0$. The next thread to reach this stage
+        (ignoring the \texttt{l == 1} for now) will decrement the lock variable
+        again but in this case \texttt{DEC} will return true since the lock
+        variable is $< 0$. This means that the thread will continue spinning
+        indefinitely.
+
+        In conventional systems once the lock variable underflowed when enough
+        threads had attempted to access the critical section then the integer
+        would take its largest possible value before allowing many threads to
+        enter the critical section at once. However, since this is
+        a theoretical system integers are defined as having limitless scale in
+        both directions and this problem does not arise.
+
+        In order to improve cache performance I have added an additional
+        condition to the while loop condition on line 4. The expression
+        \texttt{l == 1} means that the problematic \texttt{DEC} function is
+        only called if there is a possibility that it may return false and
+        allow for continued execution of the current thread.
+
+\end{enumerate}
+
+\end{document}
