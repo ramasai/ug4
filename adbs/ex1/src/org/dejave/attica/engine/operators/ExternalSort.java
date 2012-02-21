@@ -101,7 +101,7 @@ public class ExternalSort extends UnaryOperator {
         // know of is the output file
         //
         ////////////////////////////////////////////
-        outputFile = FileUtil.createTempFileName();
+        // outputFile = FileUtil.createTempFileName();
     } // initTempFiles()
 
     
@@ -133,9 +133,9 @@ public class ExternalSort extends UnaryOperator {
             //
             ////////////////////////////////////////////
             
-            outputMan = new RelationIOManager(sm, getOutputRelation(),
-                                              outputFile);
-            outputTuples = outputMan.tuples().iterator();
+            // outputMan = new RelationIOManager(sm, getOutputRelation(),
+                                              // outputFile);
+            // outputTuples = outputMan.tuples().iterator();
         }
         catch (Exception sme) {
             throw new EngineException("Could not store and sort"
