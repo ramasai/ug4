@@ -13,9 +13,11 @@ package org.dejave.attica.engine.operators;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.dejave.attica.model.Relation;
 import org.dejave.attica.storage.Tuple;
+import org.dejave.attica.storage.TupleComparator;
 
 import org.dejave.attica.storage.RelationIOManager;
 import org.dejave.attica.storage.StorageManager;
@@ -101,7 +103,8 @@ public class ExternalSort extends UnaryOperator {
         // know of is the output file
         //
         ////////////////////////////////////////////
-        // outputFile = FileUtil.createTempFileName();
+        outputFile = FileUtil.createTempFileName();
+        sm.createFile(outputFile);
     } // initTempFiles()
 
     
@@ -120,6 +123,28 @@ public class ExternalSort extends UnaryOperator {
             // in a temporary file and sort the file
             //
             ////////////////////////////////////////////
+            outputMan = new RelationIOManager(sm, getOutputRelation(),
+                                              outputFile);
+
+            Operator op = this.getInputOperator();
+            boolean done = false;
+            while (!done) {
+                Tuple tuple = op.getNext();
+                if (tuple != null) {
+                    done = (tuple instanceof EndOfStreamTuple);
+                    if (!done) {
+                        // System.out.println(tuple);
+                        returnList.add(tuple);
+                    }
+                }
+            }
+
+            Collections.sort(returnList, new TupleComparator());
+            for(Tuple tuple : returnList)
+            {
+                // System.out.println(tuple);
+                outputMan.insertTuple(tuple);
+            }
             
             ////////////////////////////////////////////
             //
@@ -133,9 +158,7 @@ public class ExternalSort extends UnaryOperator {
             //
             ////////////////////////////////////////////
             
-            // outputMan = new RelationIOManager(sm, getOutputRelation(),
-                                              // outputFile);
-            // outputTuples = outputMan.tuples().iterator();
+            outputTuples = outputMan.tuples().iterator();
         }
         catch (Exception sme) {
             throw new EngineException("Could not store and sort"
