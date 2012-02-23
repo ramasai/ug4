@@ -139,7 +139,7 @@ public class ExternalSort extends UnaryOperator {
                 }
             }
 
-            Collections.sort(returnList, new TupleComparator());
+            Collections.sort(returnList, new TupleComparator(slots));
             for(Tuple tuple : returnList)
             {
                 // System.out.println(tuple);
