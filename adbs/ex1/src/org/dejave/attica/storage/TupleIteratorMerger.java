@@ -32,11 +32,6 @@ public class TupleIteratorMerger implements Iterator<Tuple> {
 	}
 
 	public boolean hasNext() {
-		// System.err.println("hasNext?: ");
-		// for (Tuple t : currentElement) {
-		// 	System.err.println("    " + t);
-		// }
-
 		for (int i = 0; i < currentElement.length; i++) {
 			if (currentElement[i] != null) {
 				return true;
@@ -47,7 +42,7 @@ public class TupleIteratorMerger implements Iterator<Tuple> {
 	}
 
 	public Tuple next() throws NoSuchElementException {
-		int index = getMaxIndex();
+		int index = getMinIndex();
 
 		if (index < 0) {
 			return null;
@@ -72,45 +67,30 @@ public class TupleIteratorMerger implements Iterator<Tuple> {
 		}
 	}
 
-	private int getMaxIndex() {
-		int maxIndex = 0;
-		Tuple maxTuple = currentElement[0];
+	private int getMinIndex() {
+		int minIndex = 0;
+		Tuple minTuple = currentElement[0];
 
 		for (int i = 1; i < currentElement.length; i++)
 		{
-			Tuple first = maxTuple;
+			Tuple first = minTuple;
 			Tuple second = currentElement[i];
 
 			if (first == null) {
-				maxIndex = i;
-				maxTuple = second;
+				minIndex = i;
+				minTuple = second;
 				continue;
 			} else if (second == null) {
 				continue;
 			}
 
-			// System.err.println("Compare: ("
-			// 	+ first
-			// 	+ ") to ("
-			// 	+ second
-			// 	+ ").");
-
 			int compare = comparator.compare(first, second);
-			// System.err.println("Compare: ("
-			// 	+ first
-			// 	+ ") to ("
-			// 	+ second
-			// 	+ ") with result: "
-			// 	+ compare);
-
-			if (compare < 0) {
-				maxIndex = i;
-				maxTuple = second;
+			if (compare > 0) {
+				minIndex = i;
+				minTuple = second;
 			}
 		}
 
-		// System.err.println("Max Index: " + maxIndex);
-
-		return (maxTuple != null) ? maxIndex : -1;
+		return (minTuple != null) ? minIndex : -1;
 	}
 }

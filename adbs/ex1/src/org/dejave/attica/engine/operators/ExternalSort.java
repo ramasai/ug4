@@ -126,7 +126,6 @@ public class ExternalSort extends UnaryOperator {
             // Okay, first things first. Just read in all of the input into
             // a file. We can actually get to the good stuff once this is
             // done.
-
             String inputFile = FileUtil.createTempFileName();
             sm.createFile(inputFile);
 
@@ -150,32 +149,23 @@ public class ExternalSort extends UnaryOperator {
             // a file.
             TemporaryFileManager tempFileManger = new TemporaryFileManager(sm);
             Page[] buffer = new Page[buffers];
-            int i = 0;
 
             TupleComparator tupleComparator = new TupleComparator(slots);
             ArrayList<Tuple> currentBufferTuples = new ArrayList<Tuple>();
 
+            int i = 0;
             for(Page inputPage : inputMan.pages()) {
                 buffer[i++] = inputPage;
                 boolean full = (i == buffers-1);
 
                 if (full) {
-                    for (Page bufferPage : buffer) {
-                        if (bufferPage != null) {
-                            for (Tuple tuple : bufferPage) {
-                                currentBufferTuples.add(tuple);
-                            }
-                        }
+                    sortBuffer(buffer, tempFileManger, tupleComparator);
 
-                        Collections.sort(currentBufferTuples, tupleComparator);
-                        String tempName = tempFileManger.createTempFile();
-                        writeTuplesToFile(tempName, currentBufferTuples);
-                    }
-
-                    currentBufferTuples.clear();
                     i = 0;
+                    buffer = new Page[buffers];
                 }
             }
+            sortBuffer(buffer, tempFileManger, tupleComparator);
             sm.deleteFile(inputFile);
 
             // We now have sorted files that need to be iterated through
@@ -188,10 +178,6 @@ public class ExternalSort extends UnaryOperator {
                 int mergeBuffers = buffers - 1;
                 int inputFiles = inputTempFileManager.numberOfFiles();
                 int iterations = (int)Math.ceil(inputFiles/(float)mergeBuffers);
-
-                // System.err.println("We can merge " + mergeBuffers + " files at once.");
-                // System.err.println("We have " + inputFiles + " files to merge.");
-                // System.err.println("This will take " + iterations + " iterations.");
 
                 for (int iteration = 0; iteration < iterations; iteration++)
                 {
@@ -210,14 +196,12 @@ public class ExternalSort extends UnaryOperator {
                 finished = (iterations == 1);
             }
 
-
             ////////////////////////////////////////////
             //
             // the output should reside in the output file
             //
             ////////////////////////////////////////////
             String finalOutput = inputTempFileManager.getFirstFileName();
-            System.err.println(finalOutput);
             outputMan = new RelationIOManager(sm, getOutputRelation(),
                 finalOutput);
             outputTuples = outputMan.tuples().iterator();
@@ -307,10 +291,12 @@ public class ExternalSort extends UnaryOperator {
                 getOutputRelation(), fileName);
         boolean done = false;
 
+        int count = 0;
         for (Tuple tuple : tuples) {
             if (tuple != null) {
                 done = (tuple instanceof EndOfStreamTuple);
                 if (!done) {
+                    count++;
                     ioMan.insertTuple(tuple);
                 }
             }
@@ -319,18 +305,16 @@ public class ExternalSort extends UnaryOperator {
 
     private void merge(List<String> filesToMerge, TemporaryFileManager output)
         throws EngineException, StorageManagerException, IOException {
-        // System.err.println("Merging files: " + filesToMerge);
 
         // Create the output manager.
         String outputFile = output.createTempFile();
         RelationIOManager outputManager = new RelationIOManager(sm, getOutputRelation(), outputFile);
 
         // Create new input IO managers for each input file.
-        RelationIOManager[] inputManagers = new RelationIOManager[filesToMerge.size()];
         ArrayList<Iterator<Tuple>> inputStreams = new ArrayList<Iterator<Tuple>>();
         for (int i = 0; i < filesToMerge.size(); i++) {
-            inputManagers[i] = new RelationIOManager(sm, getOutputRelation(), filesToMerge.get(i));
-            inputStreams.add(inputManagers[i].tuples().iterator());
+            RelationIOManager inputManager = new RelationIOManager(sm, getOutputRelation(), filesToMerge.get(i));
+            inputStreams.add(inputManager.tuples().iterator());
         }
 
         TupleComparator tupleComparator = new TupleComparator(slots);
@@ -342,7 +326,23 @@ public class ExternalSort extends UnaryOperator {
                 outputManager.insertTuple(tuple);
             }
         }
-    }   
+    }
 
+    private void sortBuffer(Page[] buffer, TemporaryFileManager tempFileManger,
+        TupleComparator tupleComparator) throws Exception {
+        ArrayList<Tuple> currentBufferTuples = new ArrayList<Tuple>();
 
+        for (Page bufferPage : buffer) {
+            if (bufferPage != null) {
+                for (Tuple tuple : bufferPage) {
+                    currentBufferTuples.add(tuple);
+                }
+            }            
+        }
+
+        String tempName = tempFileManger.createTempFile();
+
+        Collections.sort(currentBufferTuples, tupleComparator);
+        writeTuplesToFile(tempName, currentBufferTuples);
+    }
 } // ExternalSort
