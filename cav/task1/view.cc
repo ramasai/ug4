@@ -1,15 +1,10 @@
 #include <iostream>
 #include <fstream>
+#include <GL/glut.h>
 #include <map>
 #include <set>
-
-#if defined(__APPLE__) && defined(__MACH__)
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
-
 #include "view.h"
+
 
 GLdouble bodyWidth = 1.0;
 

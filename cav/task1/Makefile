@@ -1,15 +1,15 @@
 CXX := g++
 OPTS := -Wall
-FRAMEWORKS := -framework GLUT -framework OpenGL
+LIBS := -lglut -lGLU -lGL
 
 EXECUTABLE=cav
-SOURCES=vector3f.cpp view.cpp 
+SOURCES=view.cc
 OBJECTS=$(SOURCES:.cpp=.o)
 
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(FRAMEWORKS) $(OBJECTS) -o $@
+	$(CXX) $(LIBS) $(OBJECTS) -o $@
 
 .cpp.o:
 	$(CXX) $(OPTS) -c $< -o $@
