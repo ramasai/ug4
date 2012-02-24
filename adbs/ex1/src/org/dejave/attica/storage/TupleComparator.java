@@ -10,8 +10,6 @@ package org.dejave.attica.storage;
 
 import java.util.Comparator;
 
-// TODO: Allow slots to be passed to constructor.
-
 public class TupleComparator implements Comparator<Tuple> {
 
     /** The slots that act as the sort keys. */
@@ -35,8 +33,7 @@ public class TupleComparator implements Comparator<Tuple> {
 	*/
 	@Override
 	public int compare(Tuple tuple1, Tuple tuple2) {
-		for (int i = 0; i < slots.length; i++) {
-			int index = slots[i];
+		for (int index : slots) {
 			Comparable tuple1Value = tuple1.getValue(index);
 			Comparable tuple2Value = tuple2.getValue(index);
 
