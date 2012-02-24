@@ -1218,9 +1218,7 @@ public class PlanBuilder {
                 
                 int bufferPages = sm.getNumberOfBufferPoolPages();
                 int half = bufferPages / 2;
-                ExternalSort es =
-                    new ExternalSort(operator, sm, slots,
-                                     half > 10 ? half : 10);
+                ExternalSort es = new ExternalSort(operator, sm, slots, 5);//half > 10 ? half : 10);
                 return es;
                 
                 ///////////////////////////////////////////
