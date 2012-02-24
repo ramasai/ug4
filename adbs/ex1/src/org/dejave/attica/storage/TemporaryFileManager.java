@@ -108,4 +108,14 @@ public class TemporaryFileManager {
 
 		return fileNames.subList(start, end);
 	}
+
+	public ArrayList<String> getFileNames()
+	{
+		return fileNames;
+	}
+
+	public String getFirstFileName()
+	{
+		return getFileNames().get(0);
+	}
 }

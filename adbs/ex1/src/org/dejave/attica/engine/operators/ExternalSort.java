@@ -10,6 +10,8 @@
  */
 package org.dejave.attica.engine.operators;
 
+import java.io.IOException;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import org.dejave.attica.model.Relation;
 import org.dejave.attica.storage.Page;
 import org.dejave.attica.storage.Tuple;
 import org.dejave.attica.storage.TupleComparator;
+import org.dejave.attica.storage.TupleIteratorMerger;
 
 import org.dejave.attica.storage.RelationIOManager;
 import org.dejave.attica.storage.StorageManager;
@@ -173,32 +176,50 @@ public class ExternalSort extends UnaryOperator {
                     i = 0;
                 }
             }
+            sm.deleteFile(inputFile);
 
             // We now have sorted files that need to be iterated through
             // and merged. Let's merge them.
-            int mergeBuffers = buffers - 1;
-            int files = tempFileManger.numberOfFiles();
-            System.err.println("We can merge " + mergeBuffers + " files at once.");
-            System.err.println("We have " + files + " files to merge.");
-            System.err.println("This will take " + Math.ceil(files/(float)mergeBuffers) + " iterations.");
+            TemporaryFileManager inputTempFileManager = tempFileManger;
+            TemporaryFileManager outputTempFileManager = new TemporaryFileManager(sm);
+            boolean finished = false;
+            
+            while(!finished) {
+                int mergeBuffers = buffers - 1;
+                int inputFiles = inputTempFileManager.numberOfFiles();
+                int iterations = (int)Math.ceil(inputFiles/(float)mergeBuffers);
 
-            // boolean finished = false;
-            // while(!finished) {
-            //     merge(tempFileManger)
-            // }
+                // System.err.println("We can merge " + mergeBuffers + " files at once.");
+                // System.err.println("We have " + inputFiles + " files to merge.");
+                // System.err.println("This will take " + iterations + " iterations.");
+
+                for (int iteration = 0; iteration < iterations; iteration++)
+                {
+                    List<String> filesToMerge = inputTempFileManager.window(iteration, mergeBuffers);
+                    merge(filesToMerge, outputTempFileManager);
+                }
+
+                // Remove all of the old files.
+                inputTempFileManager.deleteFiles();
+
+                // Swap the output to be the input and create a new output.
+                inputTempFileManager = outputTempFileManager;
+                outputTempFileManager = new TemporaryFileManager(sm);
+
+                // If we only had to go over things once then we're done.
+                finished = (iterations == 1);
+            }
+
 
             ////////////////////////////////////////////
             //
             // the output should reside in the output file
             //
             ////////////////////////////////////////////
-            
-            
-            sm.deleteFile(inputFile);
-            tempFileManger.deleteFiles();
-
+            String finalOutput = inputTempFileManager.getFirstFileName();
+            System.err.println(finalOutput);
             outputMan = new RelationIOManager(sm, getOutputRelation(),
-                outputFile);
+                finalOutput);
             outputTuples = outputMan.tuples().iterator();
         }
         catch (Exception sme) {
@@ -295,5 +316,33 @@ public class ExternalSort extends UnaryOperator {
             }
         }
     }
+
+    private void merge(List<String> filesToMerge, TemporaryFileManager output)
+        throws EngineException, StorageManagerException, IOException {
+        // System.err.println("Merging files: " + filesToMerge);
+
+        // Create the output manager.
+        String outputFile = output.createTempFile();
+        RelationIOManager outputManager = new RelationIOManager(sm, getOutputRelation(), outputFile);
+
+        // Create new input IO managers for each input file.
+        RelationIOManager[] inputManagers = new RelationIOManager[filesToMerge.size()];
+        ArrayList<Iterator<Tuple>> inputStreams = new ArrayList<Iterator<Tuple>>();
+        for (int i = 0; i < filesToMerge.size(); i++) {
+            inputManagers[i] = new RelationIOManager(sm, getOutputRelation(), filesToMerge.get(i));
+            inputStreams.add(inputManagers[i].tuples().iterator());
+        }
+
+        TupleComparator tupleComparator = new TupleComparator(slots);
+        TupleIteratorMerger merger = new TupleIteratorMerger(inputStreams, tupleComparator);
+
+        while (merger.hasNext()) {
+            Tuple tuple = merger.next();
+            if (tuple != null) {
+                outputManager.insertTuple(tuple);
+            }
+        }
+    }   
+
 
 } // ExternalSort
