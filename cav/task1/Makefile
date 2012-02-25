@@ -1,5 +1,5 @@
 CXX := g++
-OPTS := -Wall
+OPTS := -Wall -O2
 LIBS := -lglut -lGLU -lGL
 
 EXECUTABLE=cav

@@ -9,20 +9,10 @@
 
 using namespace std;
 
-//
-// Sample code for physics simulation
-//
-
-
-// Implements cloth simulation
-
-
 class Vector3f;
 class Triangle;
-class TriangleMesh;
+class Model;
 class Edge;
-
-
 
 class Vector3f {
 
@@ -32,18 +22,20 @@ class Vector3f {
 
 	float & operator [] (int i) {
 		return _item[i];
-    	}
+	}
 
 	float operator [] (int i) const {
 		return _item[i];
-    	}
+	}
 
 
-	Vector3f(float x, float y, float z) 
-	{  _item[0] = x ; _item[1] = y ; _item[2] = z; };
+	Vector3f(float x, float y, float z) {
+		_item[0] = x;
+		_item[1] = y;
+		_item[2] = z;
+	};
 
 	Vector3f() {};
-
 
 	Vector3f & operator = (Vector3f & obj) 
 	{
@@ -63,7 +55,6 @@ class Vector3f {
 		return *this;
 	};
 
-
 	Vector3f & operator -= (const Vector3f & obj) 
 	{
 		_item[0] -= obj[0];
@@ -73,9 +64,6 @@ class Vector3f {
 		return *this;
 	};
 
-
-
-
 	Vector3f & operator /= (const float & f) 
 	{
 		_item[0] /= f;
@@ -84,7 +72,6 @@ class Vector3f {
 
 		return *this;
 	};
-
 
 	float distance(Vector3f & v) 
 	{
@@ -99,7 +86,6 @@ class Vector3f {
 		return ret;
 	}
 
-
 	float dot(const Vector3f & input) const
 	{
 		return input._item[0]*_item[0] + input._item[1]*_item[1] + input._item[2]*_item[2] ; 
@@ -113,29 +99,25 @@ class Vector3f {
 		return ret;
 	}
 
-
-
-
 	friend Vector3f operator % ( const Vector3f & ob1, const Vector3f & ob2);
 	friend Vector3f operator - ( const Vector3f & ob1, const Vector3f & ob2);
 	friend Vector3f operator + ( const Vector3f & ob1, const Vector3f & ob2);
-
 };
 
 Vector3f operator % ( const Vector3f & ob1, const Vector3f & ob2)
 {
-    int i;              // loop counter
-    Vector3f ret;            // return value
+    int i;
+    Vector3f ret;
     int N_DV3 = 3;	
 		
     for (i = 0; i < N_DV3; i++)
-	ret._item[ i ] =
-	    ob1[ ( i + 1 ) % N_DV3 ] * ob2[ ( i + 2 ) % N_DV3 ]
-	    - ob2[ ( i + 1 ) % N_DV3 ] * ob1[ ( i + 2 ) % N_DV3 ];
+	ret._item[ i ] = ob1[ ( i + 1 ) % N_DV3 ]
+		* ob2[ ( i + 2 ) % N_DV3 ]
+	    - ob2[ ( i + 1 ) % N_DV3 ]
+		* ob1[ ( i + 2 ) % N_DV3 ];
 
     return ret;
 }
-
 
 Vector3f operator + (const Vector3f& v1, const Vector3f& v2)
 {
@@ -148,7 +130,6 @@ Vector3f operator + (const Vector3f& v1, const Vector3f& v2)
 
 Vector3f operator - (const Vector3f& v1, const Vector3f& v2)
 {
-
     Vector3f v(v1);
     for (int i = 0; i < 3 ; i++)
 	v[i] -= v2[i];
@@ -156,12 +137,8 @@ Vector3f operator - (const Vector3f& v1, const Vector3f& v2)
     return v;
 }
 
-
-
-
 float distance(Vector3f & v1, Vector3f & v2)
 {
-
 	float ret;
 
 	ret = sqrt((v2[0]-v1[0])*(v2[0]-v1[0]) + (v2[1]-v1[1])*(v2[1]-v1[1]) + (v2[2]-v1[2])*(v2[2]-v1[2]));
@@ -169,17 +146,13 @@ float distance(Vector3f & v1, Vector3f & v2)
 	return ret;
 }
 
-
 ostream & operator << (ostream & stream, Vector3f & obj) 
 {
 	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
 };
 
-
-
-
 class Triangle {
-friend class TriangleMesh;
+friend class Model;
 
 	int _id;
 	int _vertex[3];
@@ -196,7 +169,6 @@ public:
 	{
 		_vertex[0] = v1;  _vertex[1] = v2;  _vertex[2] = v3;  
 		_normal[0] = n1;  _normal[1] = n2;  _normal[2] = n3;  
-		
 	};
 
 	void setMorseMinMax(float min, float max)
@@ -267,16 +239,12 @@ public:
 		}
 	}
 
-
 	void setId(int id) { _id = id;};
 	int id() { return _id;};
 	int v1() { return _v1;};
 	int v2() { return _v2;};
-	vector <int> getTrigList() { return _trig_list ;};
+	vector<int> getTrigList() { return _trig_list ;};
 };
-
-
-
 
 struct Node {
 	int _id;
@@ -288,12 +256,8 @@ struct Node {
 	float cost;    
 };
 
-
-
-
-
-
-float fmax(float f1,float f2, float f3) {
+// FLOAT ORDERING
+float fmax(float f1, float f2, float f3) {
 	float f = f1;
 
 	if (f < f2) f = f2;
@@ -302,7 +266,7 @@ float fmax(float f1,float f2, float f3) {
 	return f;
 };
 
-float fmin(float f1,float f2, float f3) {
+float fmin(float f1, float f2, float f3) {
 	float f = f1;
 
 	if (f > f2) f = f2;
@@ -311,8 +275,8 @@ float fmin(float f1,float f2, float f3) {
 	return f;
 };
 
-
-class TriangleMesh 
+// TRIANGLE MESH
+class Model 
 {
 	vector <Vector3f> _v;
 	vector <Vector3f> _vn;
@@ -320,24 +284,35 @@ class TriangleMesh
 	vector <Node> _node;
 	vector <Edge> _edge;
 
-//	map <pair < int, int > , Edge > _edge;
-
 	float _xmax, _xmin, _ymax, _ymin, _zmin, _zmax;
 
-
+	vector <Vector3f> _joints;
+	vector <int> _jointParent;
 
 public: 
-	TriangleMesh(char * filename) { loadFile(filename) ;};
-	TriangleMesh() {};
-	void loadFile(char * filename);
+	Model(char * filename) { loadModel(filename) ;};
+	Model() {};
+	void loadModel(char * filename);
+	void loadSkeleton(char * filename);
 
 	int trigNum() { return _trig.size() ;};
+	int jointNum() { return _joints.size() ;};
 
 	void getTriangleVertices(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
 	{
 		v1 = _v[_trig[i]._vertex[0]]; 
 		v2 = _v[_trig[i]._vertex[1]]; 
 		v3 = _v[_trig[i]._vertex[2]]; 
+	}
+
+	void getJoint(int i, Vector3f &joint)
+	{
+		joint = _joints[i];
+	}
+
+	void getJointParent(int i, int &parent)
+	{
+		parent = _jointParent[i];
 	}
 	
 	void getTriangleNormals(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
@@ -346,7 +321,6 @@ public:
 		v2 = _vn[_trig[i]._normal[1]]; 
 		v3 = _vn[_trig[i]._normal[2]]; 
 	}
-		
 
 	void getMorseValue(int i, float & v1, float & v2, float & v3)
 	{
@@ -356,7 +330,6 @@ public:
 	}
 
 	float color(int i) { return _trig[i].color();};
-
 
 	void setMorseMinMax(int i, float min, float max)
 	{
@@ -380,7 +353,6 @@ public:
 			v2 -= v1;
 
 			_trig[i]._area = 0.5f*sqrt(v3.dot(v3)*v2.dot(v2) - (v3.dot(v2)*(v3.dot(v2))));  
-//			cout << "trig " << i << " v2 " << v2 << " v3 " << v3 << " area = " << _trig[i]._area << endl;
 		}
 	}
 };
