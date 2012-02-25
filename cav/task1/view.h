@@ -289,10 +289,13 @@ class Model
 	vector <Vector3f> _joints;
 	vector <int> _jointParent;
 
+	vector < vector <float> > _weights;
+
 public: 
 	Model(char * filename) { loadModel(filename) ;};
 	Model() {};
 	void loadModel(char * filename);
+	void loadWeights(char * filename);
 	void loadSkeleton(char * filename);
 
 	int trigNum() { return _trig.size() ;};

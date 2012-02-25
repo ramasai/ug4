@@ -173,11 +173,11 @@ int find(Edge & e, vector <Edge> list)
 
 void Model::loadSkeleton(char * filename)
 {
-	cout << "Loading skelton..." << endl;
+	cout << "Loading skeleton... (" << filename << ")" << endl;
     ifstream f(filename);
 
     if (f == NULL) {
-        cerr << "failed reading polygon data file " << filename << endl;
+        cerr << "failed reading skeleton data file " << filename << endl;
         exit(1);
     }
 
@@ -193,19 +193,65 @@ void Model::loadSkeleton(char * filename)
 		_joints.push_back(joint);
 		_jointParent.push_back(parent);
 	}
+}
 
-    for (int i = 0; i < _joints.size(); i++) 
-    {
-		float x = _joints[i][0];
-		float y = _joints[i][1];
-		float z = _joints[i][2];
-		//cout << "(" << x << "," << y << "," << z << ")" << endl;
+void Model::loadWeights(char * filename)
+{
+	cout << "Loading weights... (" << filename << ")" << endl;
+    ifstream f(filename);
+
+    if (f == NULL) {
+        cerr << "failed reading weights data file " << filename << endl;
+        exit(1);
+    }
+
+    char buf[1024];
+
+	// This is dreadful but what can you do.
+	float x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20;
+	float weights[21];
+
+    while (!f.eof()) {
+        f.getline(buf, sizeof(buf));
+        sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+				&x0, &x1, &x2, &x3, &x4, &x5, &x6, &x7, &x8, &x9, &x10,
+				&x11, &x12, &x13, &x14, &x15, &x16, &x17, &x18, &x19, &x20);  
+
+		weights[0] = x0;
+		weights[1] = x1;
+		weights[2] = x2;
+		weights[3] = x3;
+		weights[4] = x4;
+		weights[5] = x5;
+		weights[6] = x6;
+		weights[7] = x7;
+		weights[8] = x8;
+		weights[9] = x9;
+		weights[10] = x10;
+		weights[11] = x11;
+		weights[12] = x12;
+		weights[13] = x13;
+		weights[14] = x14;
+		weights[15] = x15;
+		weights[16] = x16;
+		weights[17] = x17;
+		weights[18] = x18;
+		weights[19] = x19;
+		weights[20] = x20;
+
+		vector <float> weight;
+
+		for (int i = 0; i < 21; i++) {
+			weight.push_back(weights[i]);
+		}
+
+		_weights.push_back(weight);
 	}
 }
 
 void Model::loadModel(char * filename)
 {
-	cout << "Loading model..." << endl;
+	cout << "Loading model... (" << filename << ")" << endl;
     ifstream f(filename);
 
     if (f == NULL) {
@@ -482,12 +528,13 @@ void myDisplay()
 int main(int argc, char **argv)
 {
     // Load the model file into the 
-    if (argc >  2)  {
+    if (argc > 3)  {
         trig.loadModel(argv[1]);
         trig.loadSkeleton(argv[2]);
+        trig.loadWeights(argv[3]);
     }
     else {
-        cerr << argv[0] << " <model filename> <" << endl;
+        cerr << argv[0] << " <model filename> <initial skeleton filename> <weights filename>" << endl;
         exit(1);
     }
 
