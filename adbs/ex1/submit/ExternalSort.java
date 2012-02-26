@@ -56,6 +56,9 @@ public class ExternalSort extends UnaryOperator {
     /** Reusable tuple list for returns. */
     private List<Tuple> returnList;
 
+    /** Output file name */ 
+    String outputFile;
+
     /**
      * Constructs a new external sort operator.
      * 
@@ -70,7 +73,6 @@ public class ExternalSort extends UnaryOperator {
     public ExternalSort(Operator operator, StorageManager sm,
                         int [] slots, int buffers) 
 	throws EngineException {
-        
         super(operator);
         this.sm = sm;
         this.slots = slots;
@@ -92,87 +94,27 @@ public class ExternalSort extends UnaryOperator {
             // done.
             String inputFile = FileUtil.createTempFileName();
             sm.createFile(inputFile);
-
-            RelationIOManager inputMan = new RelationIOManager(sm,
-                getOutputRelation(), inputFile);
-            Operator op = getInputOperator();
-
-            boolean done = false;
-            while (!done) {
-                Tuple tuple = op.getNext();
-                if (tuple != null) {
-                    done = (tuple instanceof EndOfStreamTuple);
-                    if (!done) {
-                        inputMan.insertTuple(tuple);
-                    }
-                }
-            }
+            RelationIOManager inputMan = new RelationIOManager(sm, getOutputRelation(), inputFile);
+            loadInput(inputMan);
 
             // Read the input file in in batches of B (buffer size)
             // before sorting the whole buffer and outputing it to 
             // a file.
             TemporaryFileManager tempFileManger = new TemporaryFileManager(sm);
-            Page[] buffer = new Page[buffers];
-
-            TupleComparator tupleComparator = new TupleComparator(slots);
-            ArrayList<Tuple> currentBufferTuples = new ArrayList<Tuple>();
-
-            int i = 0;
-            for(Page inputPage : inputMan.pages()) {
-                buffer[i++] = inputPage;
-                boolean full = (i == buffers-1);
-
-                if (full) {
-                    sortBuffer(buffer, tempFileManger, tupleComparator);
-
-                    i = 0;
-                    buffer = new Page[buffers];
-                }
-            }
-            sortBuffer(buffer, tempFileManger, tupleComparator);
+            batchSort(inputMan, tempFileManger);
             sm.deleteFile(inputFile);
 
             // We now have sorted files that need to be iterated through
             // and merged. Let's merge them.
-            TemporaryFileManager inputTempFileManager = tempFileManger;
-            TemporaryFileManager outputTempFileManager = new TemporaryFileManager(sm);
-            boolean finished = false;
-            
-            while(!finished) {
-                int mergeBuffers = buffers - 1;
-                int inputFiles = inputTempFileManager.numberOfFiles();
-                int iterations = (int)Math.ceil(inputFiles/(float)mergeBuffers);
+            outputFile = mergeAllFiles(tempFileManger);
 
-                for (int iteration = 0; iteration < iterations; iteration++)
-                {
-                    List<String> filesToMerge = inputTempFileManager.window(iteration, mergeBuffers);
-                    merge(filesToMerge, outputTempFileManager);
-                }
-
-                // Remove all of the old files.
-                inputTempFileManager.deleteFiles();
-
-                // Swap the output to be the input and create a new output.
-                inputTempFileManager = outputTempFileManager;
-                outputTempFileManager = new TemporaryFileManager(sm);
-
-                // If we only had to go over things once then we're done.
-                finished = (iterations == 1);
-            }
-
-            ////////////////////////////////////////////
-            //
-            // the output should reside in the output file
-            //
-            ////////////////////////////////////////////
-            String finalOutput = inputTempFileManager.getFirstFileName();
+            // The output should reside in the output file.
             outputMan = new RelationIOManager(sm, getOutputRelation(),
-                finalOutput);
+                outputFile);
             outputTuples = outputMan.tuples().iterator();
         }
         catch (Exception sme) {
-            throw new EngineException("Could not store and sort"
-                                      + "intermediate files.", sme);
+            throw new EngineException("Could not store and sort intermediate files.", sme);
         }
     } // setup()
 
@@ -183,7 +125,14 @@ public class ExternalSort extends UnaryOperator {
      * @throws EngineException whenever the operator cannot clean up
      * after itself.
      */
-    public void cleanup () throws EngineException { }
+    public void cleanup () throws EngineException {
+        try {
+            sm.deleteFile(outputFile);
+        }
+        catch (StorageManagerException sme) {
+            throw new EngineException("Could not clean up final output.", sme);
+        }
+    }
     
     /**
      * The inner method to retrieve tuples.
@@ -244,7 +193,13 @@ public class ExternalSort extends UnaryOperator {
         }
     }
 
-    private void merge(List<String> filesToMerge, TemporaryFileManager output)
+    /**
+     * Merge a list of file names into an output file manager.
+     *
+     * @param filesToMerge The file paths to merge.
+     * @param output The manager to write out to.
+     */
+    private void merge(List<String> fileNames, TemporaryFileManager output)
         throws EngineException, StorageManagerException, IOException {
 
         // Create the output manager.
@@ -253,8 +208,8 @@ public class ExternalSort extends UnaryOperator {
 
         // Create new input IO managers for each input file.
         ArrayList<Iterator<Tuple>> inputStreams = new ArrayList<Iterator<Tuple>>();
-        for (int i = 0; i < filesToMerge.size(); i++) {
-            RelationIOManager inputManager = new RelationIOManager(sm, getOutputRelation(), filesToMerge.get(i));
+        for (int i = 0; i < fileNames.size(); i++) {
+            RelationIOManager inputManager = new RelationIOManager(sm, getOutputRelation(), fileNames.get(i));
             inputStreams.add(inputManager.tuples().iterator());
         }
 
@@ -269,8 +224,11 @@ public class ExternalSort extends UnaryOperator {
         }
     }
 
+    /**
+     * Sort a buffer full of pages in main memory.
+     */
     private void sortBuffer(Page[] buffer, TemporaryFileManager tempFileManger,
-        TupleComparator tupleComparator) throws Exception {
+        TupleComparator tupleComparator) throws EngineException, StorageManagerException {
         ArrayList<Tuple> currentBufferTuples = new ArrayList<Tuple>();
 
         for (Page bufferPage : buffer) {
@@ -283,7 +241,85 @@ public class ExternalSort extends UnaryOperator {
 
         String tempName = tempFileManger.createTempFile();
 
+        // Not sure if we're allowed to use this sort but it's going to be faster
+        // than any kind of main-memory-sort I can write.
         Collections.sort(currentBufferTuples, tupleComparator);
         writeTuplesToFile(tempName, currentBufferTuples);
     }
+
+    /**
+     * Load all of the input into a manager.
+     */
+    private void loadInput(RelationIOManager inputFileMan) throws EngineException,
+        StorageManagerException {
+        Operator op = getInputOperator();
+
+        boolean done = false;
+        while (!done) {
+            Tuple tuple = op.getNext();
+            if (tuple != null) {
+                done = (tuple instanceof EndOfStreamTuple);
+                if (!done) {
+                    inputFileMan.insertTuple(tuple);
+                }
+            }
+        }
+    }
+
+    /**
+     * Sort all of the input into sorted buffer sized blocks.
+     */
+    private void batchSort(RelationIOManager input, TemporaryFileManager output)
+        throws EngineException, StorageManagerException, IOException {
+        TupleComparator tupleComparator = new TupleComparator(slots);
+
+        Page[] buffer = new Page[buffers];
+        int i = 0;
+        for(Page inputPage : input.pages()) {
+            buffer[i++] = inputPage;
+            boolean full = (i == buffers-1);
+
+            if (full) {
+                sortBuffer(buffer, output, tupleComparator);
+
+                i = 0;
+                buffer = new Page[buffers];
+            }
+        }
+        sortBuffer(buffer, output, tupleComparator);
+    }
+
+    /**
+     * Merge all of the files in the input manager into the returned file.
+     */
+    private String mergeAllFiles(TemporaryFileManager input)
+        throws StorageManagerException, EngineException, IOException {
+        TemporaryFileManager output = new TemporaryFileManager(sm);
+        boolean finished = false;
+            
+        while(!finished) {
+            int mergeBuffers = buffers - 1;
+            int inputFiles = input.numberOfFiles();
+            int iterations = (int)Math.ceil(inputFiles/(float)mergeBuffers);
+
+            for (int iteration = 0; iteration < iterations; iteration++)
+            {
+                List<String> filesToMerge = input.window(iteration, mergeBuffers);
+                merge(filesToMerge, output);
+            }
+
+            // Remove all of the old files.
+            input.deleteFiles();
+
+            // Swap the output to be the input and create a new output.
+            input = output;
+            output = new TemporaryFileManager(sm);
+
+            // If we only had to go over things once then we're done.
+            finished = (iterations == 1);
+        }
+
+        return input.getFirstFileName();
+    }
+
 } // ExternalSort
