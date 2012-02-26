@@ -1,18 +1,23 @@
 CXX := g++
 OPTS := -Wall -O2
 LIBS := -lglut -lGLU -lGL
+FRAMEWORKS := -framework GLUT -framework OpenGL
 
 EXECUTABLE=cav
 SOURCES=view.cc
-OBJECTS=$(SOURCES:.cpp=.o)
+OBJECTS=$(SOURCES:.cc=.o)
+HEADERS=$(SOURCES:.cc=.h)
 
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(LIBS) $(OBJECTS) -o $@
+	$(CXX) $(FRAMEWORKS) $(OBJECTS) -o $@
 
-.cpp.o:
+.cc.o:
 	$(CXX) $(OPTS) -c $< -o $@
 	
 clean:
 	rm -f *.o cav
+
+run: $(EXECUTABLE)
+	./cav data/arma2.obj data/skeleton2.out data/attachment2.out

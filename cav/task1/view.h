@@ -5,7 +5,12 @@
 #include <map>
 #include <vector>
 #include <cstring>
-#include <GL/glut.h>
+
+#ifdef __APPLE__
+    #include <GLUT/GLUT.h>
+#else
+    #include <GL/glut.h>
+#endif
 
 using namespace std;
 

@@ -3,7 +3,11 @@
 #include <map>
 #include <set>
 
-#include <GL/glut.h>
+#ifdef __APPLE__
+    #include <GLUT/GLUT.h>
+#else
+    #include <GL/glut.h>
+#endif
 
 #include "view.h"
 
@@ -118,7 +122,6 @@ static float matSpec2[4] = {0.4, 0., 0., 1.0};
 static float matEmission2[4] = {0.0, 0.0, 0.0, 1.0};
 
 Model trig;
-GLUquadricObj *qobj;
 
 /*
 bool contain(Edge & e, map < pair <int, int> , Edge > & list) 
