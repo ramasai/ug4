@@ -22,7 +22,7 @@ import org.dejave.attica.model.Relation;
 import org.dejave.attica.storage.Page;
 import org.dejave.attica.storage.Tuple;
 import org.dejave.attica.storage.TupleComparator;
-import org.dejave.attica.storage.TupleIteratorMerger;
+import org.dejave.attica.storage.IteratorMerger;
 
 import org.dejave.attica.storage.RelationIOManager;
 import org.dejave.attica.storage.StorageManager;
@@ -39,9 +39,6 @@ public class ExternalSort extends UnaryOperator {
     
     /** The storage manager for this operator. */
     private StorageManager sm;
-    
-    /** The name of the temporary file for the output. */
-    private String outputFile;
 	
     /** The manager that undertakes output relation I/O. */
     private RelationIOManager outputMan;
@@ -59,7 +56,6 @@ public class ExternalSort extends UnaryOperator {
     /** Reusable tuple list for returns. */
     private List<Tuple> returnList;
 
-    
     /**
      * Constructs a new external sort operator.
      * 
@@ -79,39 +75,7 @@ public class ExternalSort extends UnaryOperator {
         this.sm = sm;
         this.slots = slots;
         this.buffers = buffers;
-        try {
-            // create the temporary output files
-            initTempFiles();
-        }
-        catch (StorageManagerException sme) {
-            throw new EngineException("Could not instantiate external sort",
-                                      sme);
-        }
     } // ExternalSort()
-	
-
-    /**
-     * Initialises the temporary files, according to the number
-     * of buffers.
-     * 
-     * @throws StorageManagerException thrown whenever the temporary
-     * files cannot be initialised.
-     */
-    protected void initTempFiles() throws StorageManagerException {
-        ////////////////////////////////////////////
-        //
-        // initialise the temporary files here
-        // make sure you throw the right exception
-        // in the event of an error
-        //
-        // for the time being, the only file we
-        // know of is the output file
-        //
-        ////////////////////////////////////////////
-        outputFile = FileUtil.createTempFileName();
-        sm.createFile(outputFile);
-    } // initTempFiles()
-
     
     /**
      * Sets up this external sort operator.
@@ -219,28 +183,7 @@ public class ExternalSort extends UnaryOperator {
      * @throws EngineException whenever the operator cannot clean up
      * after itself.
      */
-    public void cleanup () throws EngineException {
-        try {
-            ////////////////////////////////////////////
-            //
-            // make sure you delete the intermediate
-            // files after sorting is done
-            //
-            ////////////////////////////////////////////
-            
-            ////////////////////////////////////////////
-            //
-            // right now, only the output file is 
-            // deleted
-            //
-            ////////////////////////////////////////////
-            sm.deleteFile(outputFile);
-        }
-        catch (StorageManagerException sme) {
-            throw new EngineException("Could not clean up final output.", sme);
-        }
-    } // cleanup()
-
+    public void cleanup () throws EngineException { }
     
     /**
      * The inner method to retrieve tuples.
@@ -291,12 +234,10 @@ public class ExternalSort extends UnaryOperator {
                 getOutputRelation(), fileName);
         boolean done = false;
 
-        int count = 0;
         for (Tuple tuple : tuples) {
             if (tuple != null) {
                 done = (tuple instanceof EndOfStreamTuple);
                 if (!done) {
-                    count++;
                     ioMan.insertTuple(tuple);
                 }
             }
@@ -318,7 +259,7 @@ public class ExternalSort extends UnaryOperator {
         }
 
         TupleComparator tupleComparator = new TupleComparator(slots);
-        TupleIteratorMerger merger = new TupleIteratorMerger(inputStreams, tupleComparator);
+        IteratorMerger<Tuple> merger = new IteratorMerger<Tuple>(inputStreams, tupleComparator);
 
         while (merger.hasNext()) {
             Tuple tuple = merger.next();
