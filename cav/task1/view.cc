@@ -22,6 +22,73 @@ int moving, begin;
 
 int newModel = 1;
 
+GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};  /* Red diffuse light. */
+GLfloat light_diffuse[] = {0.8, 0.8, 0.8, 1.0};  /* Red diffuse light. */
+GLfloat light_specular[] = {0.8, 0.8, 0.8, 1.0};  /* Red diffuse light. */
+GLfloat light_position[] = {0.0, 0.0, 1.0, 0.0};  /* Infinite light location. */
+
+static float modelAmb[4] = {0.2, 0.2, 0.2, 1.0};
+static float matAmb[4] = {0.2, 0.2, 0.2, 1.0};
+static float matDiff[4] = {0.8, 0.8, 0.8, 1.0};
+static float matSpec[4] = {0.4, 0.4, 0.4, 1.0};
+static float matEmission[4] = {0.0, 0.0, 0.0, 1.0};
+
+static float modelAmb2[4] = {0.5, 0.5, 0.5, 1.0};
+static float matAmb2[4] = {0.5, 0.5, 0.5, 1.0};
+static float matDiff2[4] = {0.8, 0., 0., 1.0};
+static float matSpec2[4] = {0.4, 0., 0., 1.0};
+static float matEmission2[4] = {0.0, 0.0, 0.0, 1.0};
+
+Model trig;
+
+void update()
+{
+	for (int vi = 0; vi < trig.vertexNum(); vi++)
+	{
+        Vector3f vertex;
+        trig.getVertex(vi, vertex);
+
+        vector <float> weights = trig.getWeights(vi);
+
+        Vector3f sum(0,0,0);
+
+		for (int bi = 0; bi < trig.jointNum(); bi++)
+		{
+            Vector3f original;
+            trig.getOriginalJoint(bi, original);
+
+            Vector3f current;
+            trig.getCurrentJoint(bi, current);
+
+            Vector3f newPos = vertex - original + current;
+
+            newPos *= weights[bi];
+
+            sum = sum + newPos;
+		}
+
+        trig.setVertex(vi, sum);
+	}
+
+    glutPostRedisplay();
+}
+
+void keyboard(unsigned char key, int x, int y)
+{
+	switch (key) {
+		case 'w':
+			trig.setCurrentJointPos(16, 0.05, 0.05, 0.05);
+			break;
+        case 's':
+            trig.setCurrentJointPos(16, -0.05, -0.05, -0.05);
+            break;
+		default:
+			break;
+	}
+
+	update();
+}
+
 void mouse(int button, int state, int x, int y)
 {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
@@ -104,27 +171,9 @@ void button(int button, int state)
 }
 
 
-GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};  /* Red diffuse light. */
-GLfloat light_diffuse[] = {0.8, 0.8, 0.8, 1.0};  /* Red diffuse light. */
-GLfloat light_specular[] = {0.8, 0.8, 0.8, 1.0};  /* Red diffuse light. */
-GLfloat light_position[] = {0.0, 0.0, 1.0, 0.0};  /* Infinite light location. */
-
-static float modelAmb[4] = {0.2, 0.2, 0.2, 1.0};
-static float matAmb[4] = {0.2, 0.2, 0.2, 1.0};
-static float matDiff[4] = {0.8, 0.8, 0.8, 1.0};
-static float matSpec[4] = {0.4, 0.4, 0.4, 1.0};
-static float matEmission[4] = {0.0, 0.0, 0.0, 1.0};
-
-static float modelAmb2[4] = {0.5, 0.5, 0.5, 1.0};
-static float matAmb2[4] = {0.5, 0.5, 0.5, 1.0};
-static float matDiff2[4] = {0.8, 0., 0., 1.0};
-static float matSpec2[4] = {0.4, 0., 0., 1.0};
-static float matEmission2[4] = {0.0, 0.0, 0.0, 1.0};
-
-Model trig;
 
 /*
-bool contain(Edge & e, map < pair <int, int> , Edge > & list) 
+bool contain(Edge & e, map < pair <int, int> , Edge > & list)
 {
 
     pair <int, int> key;
@@ -137,35 +186,35 @@ bool contain(Edge & e, map < pair <int, int> , Edge > & list)
 }
 */
 
-bool contain(Edge & e, vector < Edge > & list) 
+bool contain(Edge & e, vector < Edge > & list)
 {
-    for (int i = 0; i < list.size(); i++) 
+    for (int i = 0; i < list.size(); i++)
     {
         if ((list[i]._v1 == e._v1 && list[i]._v2 == e._v2) ||
-            (list[i]._v2 == e._v1 && list[i]._v1 == e._v2)) 
+            (list[i]._v2 == e._v1 && list[i]._v1 == e._v2))
         {
             return true;
-        }   
+        }
     }
 
     return false;
 }
 
-int edgeID(Edge &e, vector<Edge> &list) 
+int edgeID(Edge &e, vector<Edge> &list)
 {
-    for (int i = 0; i < list.size(); i++) 
+    for (int i = 0; i < list.size(); i++)
     {
         if ((list[i]._v1 == e._v1 && list[i]._v2 == e._v2) ||
-            (list[i]._v2 == e._v1 && list[i]._v1 == e._v2)) 
+            (list[i]._v2 == e._v1 && list[i]._v1 == e._v2))
         {
             return i;
-        }   
+        }
     }
 
     return -1;
 }
 
-int find(Edge & e, vector <Edge> list) 
+int find(Edge & e, vector <Edge> list)
 {
     for (int i = 0; i < list.size(); i++) {
         if (list[i] == e) return i;
@@ -186,15 +235,17 @@ void Model::loadSkeleton(char * filename)
 
     char buf[1024];
     int index, parent;
-	float x, y, z; 
+	float x, y, z;
 
     while (!f.eof()) {
         f.getline(buf, sizeof(buf));
-        sscanf(buf, "%d %f %f %f %d", &index, &x, &y, &z, &parent);  
+        sscanf(buf, "%d %f %f %f %d", &index, &x, &y, &z, &parent);
 
 		Vector3f joint(x, y, z);
-		_joints.push_back(joint);
-		_jointParent.push_back(parent);
+		Vector3f currentJoint(joint);
+		_original.push_back(joint);
+		_current.push_back(currentJoint);
+		_parent.push_back(parent);
 	}
 }
 
@@ -218,7 +269,7 @@ void Model::loadWeights(char * filename)
         f.getline(buf, sizeof(buf));
         sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
 				&x0, &x1, &x2, &x3, &x4, &x5, &x6, &x7, &x8, &x9, &x10,
-				&x11, &x12, &x13, &x14, &x15, &x16, &x17, &x18, &x19, &x20);  
+				&x11, &x12, &x13, &x14, &x15, &x16, &x17, &x18, &x19, &x20);
 
 		weights[0] = x0;
 		weights[1] = x1;
@@ -273,26 +324,26 @@ void Model::loadModel(char * filename)
 
     while (!f.eof()) {
         f.getline(buf, sizeof(buf));
-        sscanf(buf, "%s", header);  
+        sscanf(buf, "%s", header);
 
         if (strcmp(header, "v") == 0) {
             // Looks like we've got a vertex.
             // Extract the data from the file.
-            sscanf(buf, "%s %f %f %f", header, &x, &y, &z);  
-            
+            sscanf(buf, "%s %f %f %f", header, &x, &y, &z);
+
             // Store the vertex information.
             _v.push_back(Vector3f(x,y,z));
-            
+
             // Store the normal information.
             _vn.push_back(Vector3f(0.f,0.f,1.f));
 
             // Create a node and give it an ID of the current iteration we are on.
             Node node;
-            node._id = _v.size()-1; 
+            node._id = _v.size()-1;
 
             // Store it.
             _node.push_back(node);
-            
+
             // If any of the coordinates lie outside our current maximums or
             // minimums then we should update them.
             if (x > xmax) xmax = x;
@@ -303,14 +354,14 @@ void Model::loadModel(char * filename)
             if (y < ymin) ymin = y;
             if (z < zmin) zmin = z;
         }
-        else if (strcmp(header, "f") == 0) 
+        else if (strcmp(header, "f") == 0)
         {
             // Looks like we have a triangle. Let's store it.
             sscanf(buf, "%s %d %d %d", header, &v1, &v2, &v3);
 
             // Store the indexes of the contained vertices.
             Triangle trig(v1-1, v2-1, v3-1, v1-1, v2-1, v3-1);
-            trig._id = _trig.size(); 
+            trig._id = _trig.size();
             _trig.push_back(trig);
 
             // Create new edges representing the edges of the triangle.
@@ -321,7 +372,7 @@ void Model::loadModel(char * filename)
             int id1,id2,id3;
 
             // If e1 isn't in the list of edges...
-            if ((id1 = edgeID(e1, _edge)) < 0) 
+            if ((id1 = edgeID(e1, _edge)) < 0)
             {
                 // ID of edge is its index into the list.
                 id1 = _edge.size();
@@ -343,7 +394,7 @@ void Model::loadModel(char * filename)
             }
 
             // If e2 isn't in the list of edges...
-            if ((id2 = edgeID(e2, _edge)) < 0) 
+            if ((id2 = edgeID(e2, _edge)) < 0)
             {
                 id2 = _edge.size();
                 e2.setId(id2);
@@ -359,7 +410,7 @@ void Model::loadModel(char * filename)
             }
 
             // If e3 isn't in the list of edges...
-            if ((id3 = edgeID(e3, _edge)) < 0) 
+            if ((id3 = edgeID(e3, _edge)) < 0)
             {
                 id3 = _edge.size();
                 e3.setId(id3);
@@ -381,7 +432,7 @@ void Model::loadModel(char * filename)
             //_edge[id3].add_triangle(trig._id);
 
             // Add the edge indexes to the triangle.
-            _trig[_trig.size()-1].setEdge(id1,id2,id3); 
+            _trig[_trig.size()-1].setEdge(id1,id2,id3);
         }
     }
 
@@ -397,10 +448,10 @@ void Model::loadModel(char * filename)
     //}
 
     // Compute all of the faces.
-    for (int i = 0; i < _trig.size(); i++) 
+    for (int i = 0; i < _trig.size(); i++)
     {
         // Compute the normal of the face.
-        Vector3f tmpv = (_v[_trig[i]._vertex[2]] - _v[_trig[i]._vertex[0]]) % 
+        Vector3f tmpv = (_v[_trig[i]._vertex[2]] - _v[_trig[i]._vertex[0]]) %
                 (_v[_trig[i]._vertex[1]] - _v[_trig[i]._vertex[0]]) ;
 
         tmpv.normalize();
@@ -411,14 +462,14 @@ void Model::loadModel(char * filename)
         facelist[_trig[i]._vertex[2]].push_back(i);
     }
 
-    for (int i = 0; i < _v.size(); i++)  
+    for (int i = 0; i < _v.size(); i++)
     {
         // Create a blank new vector object.
-        Vector3f N(0.f,0.f,0.f); 
+        Vector3f N(0.f,0.f,0.f);
 
-        for (int j = 0; j < facelist[i].size(); j++) 
+        for (int j = 0; j < facelist[i].size(); j++)
         {
-            N += facenorm[facelist[i][j]]; 
+            N += facenorm[facelist[i][j]];
         }
 
         // Create the average of the surrounding faces to be the normal at the point.
@@ -463,7 +514,7 @@ void myDisplay()
     Vector3f v1,v2,v3,n1,n2,n3;
 
     // Loop through each triangle and draw it.
-    for (int i = 0 ; i < trignum; i++)  
+    for (int i = 0 ; i < trignum; i++)
     {
         float m1,m2,m3;
 
@@ -477,28 +528,28 @@ void myDisplay()
 
         // Set the skin colour
         GLfloat skinColor[] = {0.9, 0.2, 0.5, 1.0};
-		
+
 		glBegin(GL_TRIANGLES);
 			// Draw model
-			//skinColor[1] = m1; skinColor[0] = 1-m1;
-			//glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor); 
-			//glNormal3f(-n1[0],-n1[1],-n1[2]);
-			//glVertex3f(v1[0],v1[1],v1[2]);
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
 
-			//skinColor[1] = m2; skinColor[0] = 1-m2;
-			//glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor); 
-			//glNormal3f(-n2[0],-n2[1],-n2[2]);
-			//glVertex3f(v2[0],v2[1],v2[2]);
+			skinColor[1] = m2; skinColor[0] = 1-m2;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n2[0],-n2[1],-n2[2]);
+			glVertex3f(v2[0],v2[1],v2[2]);
 
-			//skinColor[1] = m3; skinColor[0] = 1-m3;
-			//glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor); 
-			//glNormal3f(-n3[0],-n3[1],-n3[2]);
-			//glVertex3f(v3[0],v3[1],v3[2]);
+			skinColor[1] = m3; skinColor[0] = 1-m3;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n3[0],-n3[1],-n3[2]);
+			glVertex3f(v3[0],v3[1],v3[2]);
 
-			//skinColor[1] = m1; skinColor[0] = 1-m1;
-			//glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor); 
-			//glNormal3f(-n1[0],-n1[1],-n1[2]);
-			//glVertex3f(v1[0],v1[1],v1[2]);
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
 		glEnd();
     }
 
@@ -508,9 +559,9 @@ void myDisplay()
 	Vector3f joint;
 	int jointParent;
 
-    for (int i = 0 ; i < jointNum; i++)  
+    for (int i = 0 ; i < jointNum; i++)
 	{
-		trig.getJoint(i, joint);
+		trig.getCurrentJoint(i, joint);
 		trig.getJointParent(i, jointParent);
 
 		// The first joint has no parent.
@@ -518,7 +569,7 @@ void myDisplay()
 		{
 			// Get the parent joint.
 			Vector3f parent;
-			trig.getJoint(jointParent, parent);
+			trig.getCurrentJoint(jointParent, parent);
 
 			// Draw a line from the joint to the parent.
 			DrawLine(joint, parent);
@@ -530,7 +581,7 @@ void myDisplay()
 
 int main(int argc, char **argv)
 {
-    // Load the model file into the 
+    // Load the model file into the
     if (argc > 3)  {
         trig.loadModel(argv[1]);
         trig.loadSkeleton(argv[2]);
@@ -561,7 +612,7 @@ int main(int argc, char **argv)
 
     /* Setup the view of the cube. */
     glMatrixMode(GL_PROJECTION);
-    gluPerspective( /* field of view in degree */ 40.0, 
+    gluPerspective( /* field of view in degree */ 40.0,
     /* aspect ratio */ 1., /* Z near */ 1.0, /* Z far */ 1000.0);
 
     glMatrixMode(GL_MODELVIEW);
@@ -575,6 +626,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(myDisplay);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
+	glutKeyboardFunc(keyboard);
 
     glutMainLoop();// Display everything and wait
 }

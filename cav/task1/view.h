@@ -33,7 +33,6 @@ class Vector3f {
 		return _item[i];
 	}
 
-
 	Vector3f(float x, float y, float z) {
 		_item[0] = x;
 		_item[1] = y;
@@ -42,7 +41,7 @@ class Vector3f {
 
 	Vector3f() {};
 
-	Vector3f & operator = (Vector3f & obj) 
+	Vector3f & operator = (const Vector3f & obj)
 	{
 		_item[0] = obj[0];
 		_item[1] = obj[1];
@@ -51,7 +50,7 @@ class Vector3f {
 		return *this;
 	};
 
-	Vector3f & operator += (const Vector3f & obj) 
+	Vector3f & operator += (const Vector3f & obj)
 	{
 		_item[0] += obj[0];
 		_item[1] += obj[1];
@@ -60,7 +59,7 @@ class Vector3f {
 		return *this;
 	};
 
-	Vector3f & operator -= (const Vector3f & obj) 
+	Vector3f & operator -= (const Vector3f & obj)
 	{
 		_item[0] -= obj[0];
 		_item[1] -= obj[1];
@@ -69,7 +68,14 @@ class Vector3f {
 		return *this;
 	};
 
-	Vector3f & operator /= (const float & f) 
+	Vector3f & move(float x, float y, float z)
+	{
+		_item[0] += x;
+		_item[1] += y;
+		_item[2] += z;
+	}
+
+	Vector3f & operator /= (const float & f)
 	{
 		_item[0] /= f;
 		_item[1] /= f;
@@ -78,11 +84,20 @@ class Vector3f {
 		return *this;
 	};
 
-	float distance(Vector3f & v) 
+	Vector3f & operator *= (const float & f)
+	{
+		_item[0] *= f;
+		_item[1] *= f;
+		_item[2] *= f;
+
+		return *this;
+	};
+
+	float distance(Vector3f & v)
 	{
 		float ret=0.f;
 
-		ret = (v[0]-_item[0])*(v[0]-_item[0]) 
+		ret = (v[0]-_item[0])*(v[0]-_item[0])
 		    + (v[1]-_item[1])*(v[1]-_item[1])
 		    + (v[2]-_item[2])*(v[2]-_item[2]);
 
@@ -93,12 +108,12 @@ class Vector3f {
 
 	float dot(const Vector3f & input) const
 	{
-		return input._item[0]*_item[0] + input._item[1]*_item[1] + input._item[2]*_item[2] ; 
+		return input._item[0]*_item[0] + input._item[1]*_item[1] + input._item[2]*_item[2] ;
 	}
 
 	float normalize()
 	{
-		float ret = sqrt(_item[0]*_item[0] + _item[1]*_item[1] + _item[2]*_item[2]); 
+		float ret = sqrt(_item[0]*_item[0] + _item[1]*_item[1] + _item[2]*_item[2]);
 		for (int i = 0; i < 3; i++) _item[i] /= ret;
 
 		return ret;
@@ -107,14 +122,15 @@ class Vector3f {
 	friend Vector3f operator % ( const Vector3f & ob1, const Vector3f & ob2);
 	friend Vector3f operator - ( const Vector3f & ob1, const Vector3f & ob2);
 	friend Vector3f operator + ( const Vector3f & ob1, const Vector3f & ob2);
+	friend Vector3f operator * ( const Vector3f & ob1, const Vector3f & ob2);
 };
 
 Vector3f operator % ( const Vector3f & ob1, const Vector3f & ob2)
 {
     int i;
     Vector3f ret;
-    int N_DV3 = 3;	
-		
+    int N_DV3 = 3;
+
     for (i = 0; i < N_DV3; i++)
 	ret._item[ i ] = ob1[ ( i + 1 ) % N_DV3 ]
 		* ob2[ ( i + 2 ) % N_DV3 ]
@@ -142,6 +158,15 @@ Vector3f operator - (const Vector3f& v1, const Vector3f& v2)
     return v;
 }
 
+Vector3f operator * (const Vector3f& v1, const Vector3f& v2)
+{
+    Vector3f v(v1);
+    for (int i = 0; i < 3 ; i++)
+	v[i] *= v2[i];
+
+    return v;
+}
+
 float distance(Vector3f & v1, Vector3f & v2)
 {
 	float ret;
@@ -151,9 +176,10 @@ float distance(Vector3f & v1, Vector3f & v2)
 	return ret;
 }
 
-ostream & operator << (ostream & stream, Vector3f & obj) 
+ostream & operator << (ostream & stream, Vector3f & obj)
 {
 	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
+	return stream;
 };
 
 class Triangle {
@@ -164,16 +190,16 @@ friend class Model;
 	int _normal[3];
 	int _edge[3];
 	float _min, _max;
-	float _color; 
+	float _color;
 	float _area;
 	float _ratio;
 
 public:
 
-	Triangle(int v1, int v2, int v3, int n1, int n2, int n3) 
+	Triangle(int v1, int v2, int v3, int n1, int n2, int n3)
 	{
-		_vertex[0] = v1;  _vertex[1] = v2;  _vertex[2] = v3;  
-		_normal[0] = n1;  _normal[1] = n2;  _normal[2] = n3;  
+		_vertex[0] = v1;  _vertex[1] = v2;  _vertex[2] = v3;
+		_normal[0] = n1;  _normal[1] = n2;  _normal[2] = n3;
 	};
 
 	void setMorseMinMax(float min, float max)
@@ -211,7 +237,7 @@ class Edge {
 	float length;
 	int _id;
 
-public: 
+public:
 
 	Edge () {};
 
@@ -230,16 +256,16 @@ public:
 
 	void add_triangle(int trig)
 	{
-		for (int i = 0; i < _trig_list.size(); i++) 
+		for (int i = 0; i < _trig_list.size(); i++)
 			if (trig == _trig_list[i]) return;
 
 		_trig_list.push_back(trig);
 	}
 
-	void other_trig(const int trig, vector <int> & others) 
+	void other_trig(const int trig, vector <int> & others)
 	{
 		for (int i = 0; i < _trig_list.size(); i++) {
-			if (_trig_list[i] == trig) continue; 
+			if (_trig_list[i] == trig) continue;
 			else others.push_back(_trig_list[i]);
 		}
 	}
@@ -254,11 +280,11 @@ public:
 struct Node {
 	int _id;
 
-	vector<int> edges_to;     
-	vector<float> edges_cost;   
+	vector<int> edges_to;
+	vector<float> edges_cost;
 
-	bool done;   
-	float cost;    
+	bool done;
+	float cost;
 };
 
 // FLOAT ORDERING
@@ -281,7 +307,7 @@ float fmin(float f1, float f2, float f3) {
 };
 
 // TRIANGLE MESH
-class Model 
+class Model
 {
 	vector <Vector3f> _v;
 	vector <Vector3f> _vn;
@@ -291,12 +317,13 @@ class Model
 
 	float _xmax, _xmin, _ymax, _ymin, _zmin, _zmax;
 
-	vector <Vector3f> _joints;
-	vector <int> _jointParent;
+	vector <Vector3f> _original;
+	vector <Vector3f> _current;
+	vector <int> _parent;
 
 	vector < vector <float> > _weights;
 
-public: 
+public:
 	Model(char * filename) { loadModel(filename) ;};
 	Model() {};
 	void loadModel(char * filename);
@@ -304,37 +331,60 @@ public:
 	void loadSkeleton(char * filename);
 
 	int trigNum() { return _trig.size() ;};
-	int jointNum() { return _joints.size() ;};
+	int jointNum() { return _original.size() ;};
+	int vertexNum() { return _v.size() ;};
 
 	void getTriangleVertices(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
 	{
-		v1 = _v[_trig[i]._vertex[0]]; 
-		v2 = _v[_trig[i]._vertex[1]]; 
-		v3 = _v[_trig[i]._vertex[2]]; 
+		v1 = _v[_trig[i]._vertex[0]];
+		v2 = _v[_trig[i]._vertex[1]];
+		v3 = _v[_trig[i]._vertex[2]];
 	}
 
-	void getJoint(int i, Vector3f &joint)
+	void getOriginalJoint(int i, Vector3f &joint)
 	{
-		joint = _joints[i];
+		joint = _original[i];
+	}
+
+	void getCurrentJoint(int i, Vector3f &joint)
+	{
+		joint = _current[i];
+	}
+
+	void getVertex(int i, Vector3f &vertex)
+	{
+		vertex = _v[i];
+	}
+
+	void setVertex(int i, Vector3f vertex)
+	{
+		_v[i][0] = vertex[0];
+		_v[i][1] = vertex[1];
+		_v[i][2] = vertex[2];
 	}
 
 	void getJointParent(int i, int &parent)
 	{
-		parent = _jointParent[i];
+		parent = _parent[i];
 	}
-	
+
 	void getTriangleNormals(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
 	{
-		v1 = _vn[_trig[i]._normal[0]]; 
-		v2 = _vn[_trig[i]._normal[1]]; 
-		v3 = _vn[_trig[i]._normal[2]]; 
+		v1 = _vn[_trig[i]._normal[0]];
+		v2 = _vn[_trig[i]._normal[1]];
+		v3 = _vn[_trig[i]._normal[2]];
 	}
 
 	void getMorseValue(int i, float & v1, float & v2, float & v3)
 	{
-		v1 = _node[_trig[i]._vertex[0]].cost; 
-		v2 = _node[_trig[i]._vertex[1]].cost; 
-		v3 = _node[_trig[i]._vertex[2]].cost; 
+		v1 = _node[_trig[i]._vertex[0]].cost;
+		v2 = _node[_trig[i]._vertex[1]].cost;
+		v3 = _node[_trig[i]._vertex[2]].cost;
+	}
+
+	vector<float> getWeights(int i)
+	{
+		return _weights[i];
 	}
 
 	float color(int i) { return _trig[i].color();};
@@ -349,18 +399,22 @@ public:
 		_trig[i].getMorseMinMax(min,max);
 	}
 
+	void setCurrentJointPos(int i, float x, float y, float z)
+	{
+		_current[i].move(x, y, z);
+	}
 
-	void calcTriangleArea() 
+	void calcTriangleArea()
 	{
 		Vector3f v1,v2,v3;
 
-		for (int i = 0 ;i < _trig.size(); i++) 
+		for (int i = 0 ;i < _trig.size(); i++)
 		{
 			getTriangleVertices(i, v1,v2,v3);
 			v3 -= v1;
 			v2 -= v1;
 
-			_trig[i]._area = 0.5f*sqrt(v3.dot(v3)*v2.dot(v2) - (v3.dot(v2)*(v3.dot(v2))));  
+			_trig[i]._area = 0.5f*sqrt(v3.dot(v3)*v2.dot(v2) - (v3.dot(v2)*(v3.dot(v2))));
 		}
 	}
 };
