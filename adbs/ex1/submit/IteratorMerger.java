@@ -59,7 +59,7 @@ public class IteratorMerger<E> implements Iterator<E> {
 		int size = iterators.size();
 		for (int i = 0; i < size; i++) {
 			// Since Java doesn't allow generic arrays without unsafe cast
-			// warnings (because it's bad) this hack is needed to add an
+			// warnings(because it's bad) this hack is needed to add an
 			// element for reload() to update.
 			headElements.add(null);
 			reload(i);
