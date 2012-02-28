@@ -39,13 +39,13 @@ public class ExternalSort extends UnaryOperator {
     
     /** The storage manager for this operator. */
     private StorageManager sm;
-	
+    
     /** The manager that undertakes output relation I/O. */
     private RelationIOManager outputMan;
-	
+    
     /** The slots that act as the sort keys. */
     private int [] slots;
-	
+    
     /** Number of buffers (i.e., buffer pool pages and 
      * output files). */
     private int buffers;
@@ -72,7 +72,7 @@ public class ExternalSort extends UnaryOperator {
      */
     public ExternalSort(Operator operator, StorageManager sm,
                         int [] slots, int buffers) 
-	throws EngineException {
+    throws EngineException {
         super(operator);
         this.sm = sm;
         this.slots = slots;
@@ -95,18 +95,28 @@ public class ExternalSort extends UnaryOperator {
             String inputFile = FileUtil.createTempFileName();
             sm.createFile(inputFile);
             RelationIOManager inputMan = new RelationIOManager(sm, getOutputRelation(), inputFile);
-            loadInput(inputMan);
-
-            // Read the input file in in batches of B (buffer size)
-            // before sorting the whole buffer and outputing it to 
-            // a file.
             TemporaryFileManager tempFileManger = new TemporaryFileManager(sm);
-            batchSort(inputMan, tempFileManger);
-            sm.deleteFile(inputFile);
 
-            // We now have sorted files that need to be iterated through
-            // and merged. Let's merge them.
-            outputFile = mergeAllFiles(tempFileManger);
+            // Load the tuples in but check to see if there actually were any. This
+            // can happen when we are given an empty table or a WHERE clause which doesn't
+            // match any tuples.
+            boolean tuplesInInput = loadInput(inputMan);
+
+            if (tuplesInInput) {
+                // Read the input file in in batches of B (buffer size)
+                // before sorting the whole buffer and outputing it to 
+                // a file.
+                batchSort(inputMan, tempFileManger);
+                sm.deleteFile(inputFile);
+
+                // We now have sorted files that need to be iterated through
+                // and merged. Let's merge them.
+                outputFile = mergeAllFiles(tempFileManger);
+            }
+            else {
+                // No tuples in input! Just return an empty file.
+                outputFile = tempFileManger.createTempFile();
+            }
 
             // The output should reside in the output file.
             outputMan = new RelationIOManager(sm, getOutputRelation(),
@@ -159,7 +169,7 @@ public class ExternalSort extends UnaryOperator {
      * Operator class abstract interface -- never called.
      */
     protected List<Tuple> innerProcessTuple(Tuple tuple, int inOp)
-	throws EngineException {
+    throws EngineException {
         return new ArrayList<Tuple>();
     } // innerProcessTuple()
 
@@ -250,7 +260,7 @@ public class ExternalSort extends UnaryOperator {
         int noOfTotalTuples = ((noOfPages-1) * noOfTuples) + noOfTuplesInLast;
 
         // Sort the tuples
-        quick_srt(buffer, 0, noOfTotalTuples-1, tupleComparator, noOfTuples);
+        quickSortBuffer(buffer, 0, noOfTotalTuples-1, tupleComparator, noOfTuples);
 
         // Not sure if we're allowed to use this sort but it's going to be faster
         // than any kind of main-memory-sort I can write.
@@ -269,7 +279,7 @@ public class ExternalSort extends UnaryOperator {
      * @param comparator the comparator to use
      * @param n the number of tuples in a page
      */
-    private void quick_srt(Page[] buffer, int low, int high, TupleComparator comparator, int n) {
+    private void quickSortBuffer(Page[] buffer, int low, int high, TupleComparator comparator, int n) {
         int lo = low;
         int hi = high;
 
@@ -307,27 +317,33 @@ public class ExternalSort extends UnaryOperator {
             lo = temp;
         }
 
-        quick_srt(buffer, low, lo, comparator, n);
-        quick_srt(buffer, lo == low ? lo+1 : lo, high, comparator, n);
+        quickSortBuffer(buffer, low, lo, comparator, n);
+        quickSortBuffer(buffer, lo == low ? lo+1 : lo, high, comparator, n);
     }
 
     /**
      * Load all of the input into a manager.
+     *
+     * @return were there any tuples in thre input?
      */
-    private void loadInput(RelationIOManager inputFileMan) throws EngineException,
+    private boolean loadInput(RelationIOManager inputFileMan) throws EngineException,
         StorageManagerException {
         Operator op = getInputOperator();
 
+        boolean tuplesInInput = false;
         boolean done = false;
         while (!done) {
             Tuple tuple = op.getNext();
             if (tuple != null) {
                 done = (tuple instanceof EndOfStreamTuple);
                 if (!done) {
+                    tuplesInInput = true;
                     inputFileMan.insertTuple(tuple);
                 }
             }
         }
+
+        return tuplesInInput;
     }
 
     /**
