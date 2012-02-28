@@ -284,6 +284,12 @@ void Model::loadSkeleton(char * filename)
 
         _translationMatrix.push_back(translationMatrix);
 	}
+
+    _original.pop_back();
+    _current.pop_back();
+    _parent.pop_back();
+    _rotationMatrix.pop_back();
+    _translationMatrix.pop_back();
 }
 
 void Model::loadWeights(char * filename)
