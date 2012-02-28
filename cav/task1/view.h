@@ -18,6 +18,7 @@ class Vector3f;
 class Triangle;
 class Model;
 class Edge;
+class TransformMatrix;
 
 class Vector3f {
 
@@ -306,6 +307,131 @@ float fmin(float f1, float f2, float f3) {
 	return f;
 };
 
+class TransformMatrix
+{
+	float _entries[4][4];
+
+public:
+	TransformMatrix() {
+		blankOut();
+		identity();
+	}
+
+	TransformMatrix(Vector3f translation, bool inverse) {
+		if (inverse) translation *= -1;
+
+		blankOut();
+		identity();
+
+		translate(translation);
+	}
+
+	void translate(Vector3f translation)
+	{
+		setCell(1,4,translation[0]);
+		setCell(2,4,translation[1]);
+		setCell(3,4,translation[2]);
+	}
+
+	float getCell(int n, int m) {
+		return _entries[n-1][m-1];
+	}
+
+	void setCell(int n, int m, float value) {
+		_entries[n-1][m-1] = value;
+	}
+
+	void blankOut() {
+		for (int i = 1; i <= 4; ++i)
+		{
+			for (int j = 1; j <= 4; ++j)
+			{
+				setCell(i, j, 0.0f);
+			}
+		}
+	}
+
+	void identity() {
+		for (int i = 1; i <= 4; ++i)
+		{
+			setCell(i, i, 1.0f);
+		}
+	}
+
+	void rotateX(float angle) {
+		blankOut();
+		identity();
+
+		setCell(2, 2, cos(angle));
+		setCell(2, 3, -sin(angle));
+		setCell(3, 2, sin(angle));
+		setCell(3, 3, cos(angle));
+	}
+
+	void rotateY(float angle) {
+		blankOut();
+		identity();
+
+		setCell(1, 1, cos(angle));
+		setCell(1, 3, sin(angle));
+		setCell(3, 1, -sin(angle));
+		setCell(3, 3, cos(angle));
+	}
+
+	void rotateZ(float angle) {
+		blankOut();
+		identity();
+
+		setCell(1, 1, cos(angle));
+		setCell(1, 2, -sin(angle));
+		setCell(2, 1, sin(angle));
+		setCell(2, 2, cos(angle));
+	}
+
+	void printMatrix() {
+		cout << "[";
+
+		for (int i = 1; i <= 4; ++i)
+		{
+			for (int j = 1; j <= 4; ++j)
+			{
+				cout << getCell(i, j) << ", ";
+			}
+
+			cout << "]" << endl;
+		}
+	}
+
+	TransformMatrix multiply(TransformMatrix other) {
+		TransformMatrix newMatrix;
+
+		for (int i = 1; i <= 4; ++i)
+		{
+			for (int j = 1; j <= 4; ++j)
+			{
+				newMatrix.setCell(i, j, getCell(i, j));
+			}
+		}
+
+		for (int i = 1; i <= 4; ++i)
+		{
+			for (int j = 1; j <= 4; ++j)
+			{
+				float sum = 0.0f;
+
+				for (int k = 1; k <= 4; ++k)
+				{
+					sum += getCell(i, k) * other.getCell(k, j);
+				}
+
+				newMatrix.setCell(i, j, sum);
+			}
+		}
+
+		return newMatrix;
+	}
+};
+
 // TRIANGLE MESH
 class Model
 {
@@ -322,6 +448,9 @@ class Model
 	vector <int> _parent;
 
 	vector < vector <float> > _weights;
+
+	vector < TransformMatrix > _translationMatrix;
+	vector < TransformMatrix > _rotationMatrix;
 
 public:
 	Model(char * filename) { loadModel(filename) ;};
@@ -351,6 +480,11 @@ public:
 		joint = _current[i];
 	}
 
+	void setCurrentJoint(int i, Vector3f &joint)
+	{
+		_current[i] = joint;
+	}
+
 	void getVertex(int i, Vector3f &vertex)
 	{
 		vertex = _v[i];
@@ -361,6 +495,35 @@ public:
 		_v[i][0] = vertex[0];
 		_v[i][1] = vertex[1];
 		_v[i][2] = vertex[2];
+	}
+
+	void rotateJointX(int jointIndex, float degrees) {
+		_rotationMatrix[jointIndex].rotateX(degrees);
+	}
+
+	TransformMatrix getTransformMatrix(int i)
+	{
+		int parent;
+		getJointParent(i, parent);
+
+		TransformMatrix trans;
+
+		while (parent != -1)
+		{
+			// cout << "Parent: " << parent << endl << endl;
+			trans = trans.multiply(_rotationMatrix[parent]);
+			if (parent != -1)
+			{
+				trans = trans.multiply(_translationMatrix[parent]);
+				_translationMatrix[parent].printMatrix();
+			}
+			getJointParent(parent, parent);
+		}
+
+		trans = trans.multiply(_rotationMatrix[i]);
+		trans = trans.multiply(_translationMatrix[i]);
+
+		return trans;
 	}
 
 	void getJointParent(int i, int &parent)

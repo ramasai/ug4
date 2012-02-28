@@ -43,6 +43,18 @@ Model trig;
 
 void update()
 {
+    for (int ji = 0; ji < trig.jointNum(); ji++)
+    {
+        // For each joint calculate new position.
+        Vector3f current;
+        TransformMatrix mat = trig.getTransformMatrix(ji);
+        Vector3f newCoord(-mat.getCell(1,4),
+                          -mat.getCell(2,4),
+                          -mat.getCell(3,4));
+        trig.setCurrentJoint(ji, newCoord);
+    }
+
+    // Linear Blending
 	for (int vi = 0; vi < trig.vertexNum(); vi++)
 	{
         Vector3f vertex;
@@ -73,15 +85,16 @@ void update()
     glutPostRedisplay();
 }
 
+float rot = 0.0f;
+
 void keyboard(unsigned char key, int x, int y)
 {
+    rot -= 0.1f;
+
 	switch (key) {
 		case 'w':
-			trig.setCurrentJointPos(16, 0.05, 0.05, 0.05);
+			trig.rotateJointX(19, rot);
 			break;
-        case 's':
-            trig.setCurrentJointPos(16, -0.05, -0.05, -0.05);
-            break;
 		default:
 			break;
 	}
@@ -170,8 +183,6 @@ void button(int button, int state)
   }
 }
 
-
-
 /*
 bool contain(Edge & e, map < pair <int, int> , Edge > & list)
 {
@@ -246,6 +257,25 @@ void Model::loadSkeleton(char * filename)
 		_original.push_back(joint);
 		_current.push_back(currentJoint);
 		_parent.push_back(parent);
+
+        // Create matrices.
+
+        // Rotation matrix is just the identity matrix when starting.
+        TransformMatrix rotationMatrix;
+        _rotationMatrix.push_back(rotationMatrix);
+
+        // Translation matrix
+        TransformMatrix translationMatrix;
+
+        if (_original.size() >= 1) {
+            Vector3f parentJoint;
+            getOriginalJoint(parent, parentJoint);
+
+            Vector3f translation = parentJoint - joint;
+            translationMatrix.translate(translation);
+        }
+
+        _translationMatrix.push_back(translationMatrix);
 	}
 }
 
@@ -267,7 +297,7 @@ void Model::loadWeights(char * filename)
 
     while (!f.eof()) {
         f.getline(buf, sizeof(buf));
-        sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+        sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
 				&x0, &x1, &x2, &x3, &x4, &x5, &x6, &x7, &x8, &x9, &x10,
 				&x11, &x12, &x13, &x14, &x15, &x16, &x17, &x18, &x19, &x20);
 
@@ -295,9 +325,14 @@ void Model::loadWeights(char * filename)
 
 		vector <float> weight;
 
+        float sum = 0.0f;
 		for (int i = 0; i < 21; i++) {
-			weight.push_back(weights[i]);
+            sum += weights[i];
 		}
+
+        for (int i = 0; i < 21; i++) {
+            weight.push_back(weights[i]/sum);
+        }
 
 		_weights.push_back(weight);
 	}
