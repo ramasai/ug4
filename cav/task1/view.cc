@@ -59,6 +59,7 @@ void update()
 	{
         Vector3f vertex;
         trig.getVertex(vi, vertex);
+        // cout << "Current Skin Vertex: " << vertex << endl;
 
         vector <float> weights = trig.getWeights(vi);
 
@@ -68,17 +69,22 @@ void update()
 		{
             Vector3f original;
             trig.getOriginalJoint(bi, original);
+            // cout << "Original Joint (" << bi << "): " << vertex << endl;
 
             Vector3f current;
             trig.getCurrentJoint(bi, current);
+            // cout << " Current Joint (" << bi << "): " << vertex << endl;
 
             Vector3f newPos = vertex - original + current;
+            // cout << "New Vertex: " << sum << endl;
 
             newPos *= weights[bi];
+            // cout << "      Weights (" << bi << "): " << weights[bi] << endl;
 
             sum = sum + newPos;
 		}
 
+        cout << "New Skin Vertex: " << sum << endl;
         trig.setVertex(vi, sum);
 	}
 
@@ -565,28 +571,28 @@ void myDisplay()
         // Set the skin colour
         GLfloat skinColor[] = {0.9, 0.2, 0.5, 1.0};
 
-		// glBegin(GL_TRIANGLES);
-		// 	// Draw model
-		// 	skinColor[1] = m1; skinColor[0] = 1-m1;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n1[0],-n1[1],-n1[2]);
-		// 	glVertex3f(v1[0],v1[1],v1[2]);
+		glBegin(GL_TRIANGLES);
+			// Draw model
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
 
-		// 	skinColor[1] = m2; skinColor[0] = 1-m2;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n2[0],-n2[1],-n2[2]);
-		// 	glVertex3f(v2[0],v2[1],v2[2]);
+			skinColor[1] = m2; skinColor[0] = 1-m2;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n2[0],-n2[1],-n2[2]);
+			glVertex3f(v2[0],v2[1],v2[2]);
 
-		// 	skinColor[1] = m3; skinColor[0] = 1-m3;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n3[0],-n3[1],-n3[2]);
-		// 	glVertex3f(v3[0],v3[1],v3[2]);
+			skinColor[1] = m3; skinColor[0] = 1-m3;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n3[0],-n3[1],-n3[2]);
+			glVertex3f(v3[0],v3[1],v3[2]);
 
-		// 	skinColor[1] = m1; skinColor[0] = 1-m1;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n1[0],-n1[1],-n1[2]);
-		// 	glVertex3f(v1[0],v1[1],v1[2]);
-		// glEnd();
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
+		glEnd();
     }
 
 	// Draw skeleton
