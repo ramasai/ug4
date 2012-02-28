@@ -176,18 +176,25 @@ public class ExternalSort extends UnaryOperator {
         return new Relation(getInputOperator().getOutputRelation());
     } // setOutputRelation()
 
-    private void writeTuplesToFile(String fileName, Collection<Tuple> tuples)
+    /**
+     * Given a filename and a buffer of pages, write them all out to a file.
+     */
+    private void writeBufferToFile(String fileName, Page[] buffer)
         throws EngineException, StorageManagerException
     {
         RelationIOManager ioMan = new RelationIOManager(sm,
                 getOutputRelation(), fileName);
         boolean done = false;
 
-        for (Tuple tuple : tuples) {
-            if (tuple != null) {
-                done = (tuple instanceof EndOfStreamTuple);
-                if (!done) {
-                    ioMan.insertTuple(tuple);
+        for (Page page : buffer) {
+            if (page != null) {
+                for (Tuple tuple : page) {
+                    if (tuple != null) {
+                        done = (tuple instanceof EndOfStreamTuple);
+                        if (!done) {
+                            ioMan.insertTuple(tuple);
+                        }
+                    }
                 }
             }
         }
@@ -231,20 +238,77 @@ public class ExternalSort extends UnaryOperator {
         TupleComparator tupleComparator) throws EngineException, StorageManagerException {
         ArrayList<Tuple> currentBufferTuples = new ArrayList<Tuple>();
 
+        int noOfPages = 0;
         for (Page bufferPage : buffer) {
             if (bufferPage != null) {
-                for (Tuple tuple : bufferPage) {
-                    currentBufferTuples.add(tuple);
-                }
+                noOfPages++;
             }            
         }
 
-        String tempName = tempFileManger.createTempFile();
+        int noOfTuples = buffer[0].getNumberOfTuples();
+        int noOfTuplesInLast = buffer[noOfPages-1].getNumberOfTuples();
+        int noOfTotalTuples = ((noOfPages-1) * noOfTuples) + noOfTuplesInLast;
+
+        // Sort the tuples
+        quick_srt(buffer, 0, noOfTotalTuples-1, tupleComparator, noOfTuples);
 
         // Not sure if we're allowed to use this sort but it's going to be faster
         // than any kind of main-memory-sort I can write.
-        Collections.sort(currentBufferTuples, tupleComparator);
-        writeTuplesToFile(tempName, currentBufferTuples);
+        // Collections.sort(currentBufferTuples, tupleComparator);
+        String tempName = tempFileManger.createTempFile();
+        writeBufferToFile(tempName, buffer);
+    }
+
+    /**
+     * A custom written quicksort implementation that understands the page boundaries and
+     * can swap tuples between them.
+     *
+     * @param buffer the buffer of pages
+     * @param low lower tuple index
+     * @param high high tuple index
+     * @param comparator the comparator to use
+     * @param n the number of tuples in a page
+     */
+    private void quick_srt(Page[] buffer, int low, int high, TupleComparator comparator, int n) {
+        int lo = low;
+        int hi = high;
+
+        if (lo >= hi) {
+            return;
+        }
+
+        int i = (lo + hi) / 2;
+        Tuple midTuple = buffer[(int)Math.floor(i/n)].retrieveTuple(i%n);
+
+        while (lo < hi) {
+            Tuple lowTuple = buffer[(int)Math.floor(lo/n)].retrieveTuple(lo%n);
+            while (lo < hi && comparator.compare(lowTuple, midTuple) < 0) {
+                lo++;
+                lowTuple = buffer[(int)Math.floor(lo/n)].retrieveTuple(lo%n);
+            }
+        
+            Tuple highTuple = buffer[(int)Math.floor(hi/n)].retrieveTuple(hi%n);
+            while (lo < hi && comparator.compare(highTuple, midTuple) > 0) {
+                hi--;
+                highTuple = buffer[(int)Math.floor(hi/n)].retrieveTuple(hi%n);
+            }
+
+
+            if (lo < hi) {
+                Tuple temp = buffer[(int)Math.floor(lo/n)].retrieveTuple(lo%n);
+                buffer[(int)Math.floor(lo/n)].setTuple(lo%n, buffer[(int)Math.floor(hi/n)].retrieveTuple(hi%n));
+                buffer[(int)Math.floor(hi/n)].setTuple(hi%n, temp);
+            }
+        }
+
+        if (hi < lo) {
+            int temp = hi;
+            hi = lo;
+            lo = temp;
+        }
+
+        quick_srt(buffer, low, lo, comparator, n);
+        quick_srt(buffer, lo == low ? lo+1 : lo, high, comparator, n);
     }
 
     /**
