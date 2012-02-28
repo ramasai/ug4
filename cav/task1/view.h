@@ -515,7 +515,6 @@ public:
 			if (parent != -1)
 			{
 				trans = trans.multiply(_translationMatrix[parent]);
-				_translationMatrix[parent].printMatrix();
 			}
 			getJointParent(parent, parent);
 		}
