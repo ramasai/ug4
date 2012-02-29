@@ -14,11 +14,10 @@
 
 using namespace std;
 
-// class Vector3f;
-class Triangle;
+#include "triangle.h"
+
 class Model;
 class Edge;
-class TransformMatrix;
 
 // class Vector3f {
 
@@ -183,50 +182,6 @@ class TransformMatrix;
 // 	return stream;
 // };
 
-class Triangle {
-	
-	friend class Model;
-
-	int _id;
-	int _vertex[3];
-	int _normal[3];
-	int _edge[3];
-	float _min, _max;
-	float _color;
-	float _area;
-	float _ratio;
-
-public:
-
-	Triangle(int v1, int v2, int v3, int n1, int n2, int n3)
-	{
-		_vertex[0] = v1;  _vertex[1] = v2;  _vertex[2] = v3;
-		_normal[0] = n1;  _normal[1] = n2;  _normal[2] = n3;
-	};
-
-	void setMorseMinMax(float min, float max)
-	{
-		_min = min; _max = max;
-	}
-
-	void getMorseMinMax(float & min, float & max)
-	{
-		min = _min; max = _max;
-	}
-
-	void setEdge(int e1, int e2, int e3)
-	{
-		_edge[0] = e1;
-		_edge[1] = e2;
-		_edge[2] = e3;
-	};
-
-	int edge(int i) { return _edge[i];};
-	int id() { return _id;};
-	void setColor(float f) { _color = f ;};
-	float color() { return _color;};
-};
-
 class Edge {
 
 	friend bool contain(Edge & e, map < pair <int, int> , Edge > & list) ;
@@ -308,131 +263,6 @@ float fmin(float f1, float f2, float f3) {
 	return f;
 };
 
-class TransformMatrix
-{
-	float _entries[4][4];
-
-public:
-	TransformMatrix() {
-		blankOut();
-		identity();
-	}
-
-	TransformMatrix(Vector3f translation, bool inverse) {
-		if (inverse) translation *= -1;
-
-		blankOut();
-		identity();
-
-		translate(translation);
-	}
-
-	void translate(Vector3f translation)
-	{
-		setCell(1,4,translation[0]);
-		setCell(2,4,translation[1]);
-		setCell(3,4,translation[2]);
-	}
-
-	float getCell(int n, int m) {
-		return _entries[n-1][m-1];
-	}
-
-	void setCell(int n, int m, float value) {
-		_entries[n-1][m-1] = value;
-	}
-
-	void blankOut() {
-		for (int i = 1; i <= 4; ++i)
-		{
-			for (int j = 1; j <= 4; ++j)
-			{
-				setCell(i, j, 0.0f);
-			}
-		}
-	}
-
-	void identity() {
-		for (int i = 1; i <= 4; ++i)
-		{
-			setCell(i, i, 1.0f);
-		}
-	}
-
-	void rotateX(float angle) {
-		blankOut();
-		identity();
-
-		setCell(2, 2, cos(angle));
-		setCell(2, 3, -sin(angle));
-		setCell(3, 2, sin(angle));
-		setCell(3, 3, cos(angle));
-	}
-
-	void rotateY(float angle) {
-		blankOut();
-		identity();
-
-		setCell(1, 1, cos(angle));
-		setCell(1, 3, sin(angle));
-		setCell(3, 1, -sin(angle));
-		setCell(3, 3, cos(angle));
-	}
-
-	void rotateZ(float angle) {
-		blankOut();
-		identity();
-
-		setCell(1, 1, cos(angle));
-		setCell(1, 2, -sin(angle));
-		setCell(2, 1, sin(angle));
-		setCell(2, 2, cos(angle));
-	}
-
-	void printMatrix() {
-		cout << "[";
-
-		for (int i = 1; i <= 4; ++i)
-		{
-			for (int j = 1; j <= 4; ++j)
-			{
-				cout << getCell(i, j) << ", ";
-			}
-
-			cout << "]" << endl;
-		}
-	}
-
-	TransformMatrix multiply(TransformMatrix other) {
-		TransformMatrix newMatrix;
-
-		for (int i = 1; i <= 4; ++i)
-		{
-			for (int j = 1; j <= 4; ++j)
-			{
-				newMatrix.setCell(i, j, getCell(i, j));
-			}
-		}
-
-		for (int i = 1; i <= 4; ++i)
-		{
-			for (int j = 1; j <= 4; ++j)
-			{
-				float sum = 0.0f;
-
-				for (int k = 1; k <= 4; ++k)
-				{
-					sum += getCell(i, k) * other.getCell(k, j);
-				}
-
-				newMatrix.setCell(i, j, sum);
-			}
-		}
-
-		return newMatrix;
-	}
-};
-
 // TRIANGLE MESH
 class Model
 {
@@ -449,9 +279,6 @@ class Model
 	vector <int> _parent;
 
 	vector < vector <float> > _weights;
-
-	vector < TransformMatrix > _translationMatrix;
-	vector < TransformMatrix > _rotationMatrix;
 
 public:
 	Model(char * filename) { loadModel(filename) ;};
@@ -496,34 +323,6 @@ public:
 		_v[i][0] = vertex[0];
 		_v[i][1] = vertex[1];
 		_v[i][2] = vertex[2];
-	}
-
-	void rotateJointX(int jointIndex, float degrees) {
-		_rotationMatrix[jointIndex].rotateX(degrees);
-	}
-
-	TransformMatrix getTransformMatrix(int i)
-	{
-		int parent;
-		getJointParent(i, parent);
-
-		TransformMatrix trans;
-
-		while (parent != -1)
-		{
-			// cout << "Parent: " << parent << endl << endl;
-			trans = trans.multiply(_rotationMatrix[parent]);
-			if (parent != -1)
-			{
-				trans = trans.multiply(_translationMatrix[parent]);
-			}
-			getJointParent(parent, parent);
-		}
-
-		trans = trans.multiply(_rotationMatrix[i]);
-		trans = trans.multiply(_translationMatrix[i]);
-
-		return trans;
 	}
 
 	void getJointParent(int i, int &parent)
