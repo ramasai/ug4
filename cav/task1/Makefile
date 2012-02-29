@@ -4,7 +4,7 @@ LIBS := -lglut -lGLU -lGL
 FRAMEWORKS := -framework GLUT -framework OpenGL
 
 EXECUTABLE=cav
-SOURCES=view.cc
+SOURCES=view.cc matrix4f.cc
 OBJECTS=$(SOURCES:.cc=.o)
 HEADERS=$(SOURCES:.cc=.h)
 

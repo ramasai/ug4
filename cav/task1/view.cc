@@ -9,6 +9,7 @@
     #include <GL/glut.h>
 #endif
 
+#include "matrix4f.h"
 #include "view.h"
 
 #define NROWS 480
@@ -84,7 +85,6 @@ void update()
             sum = sum + newPos;
 		}
 
-        cout << "New Skin Vertex: " << sum << endl;
         trig.setVertex(vi, sum);
 	}
 
