@@ -261,10 +261,6 @@ public class ExternalSort extends UnaryOperator {
 
         // Sort the tuples
         quickSortBuffer(buffer, 0, noOfTotalTuples-1, tupleComparator, noOfTuples);
-
-        // Not sure if we're allowed to use this sort but it's going to be faster
-        // than any kind of main-memory-sort I can write.
-        // Collections.sort(currentBufferTuples, tupleComparator);
         String tempName = tempFileManger.createTempFile();
         writeBufferToFile(tempName, buffer);
     }
