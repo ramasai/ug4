@@ -67,32 +67,32 @@ void update()
     }
 
     // Linear Blending
-	// for (int vi = 0; vi < trig.vertexNum(); vi++)
-	// {
- //        Vector3f vertex;
- //        trig.getVertex(vi, vertex);
+	for (int vi = 0; vi < trig.vertexNum(); vi++)
+	{
+        Vector3f vertex;
+        trig.getVertex(vi, vertex);
 
- //        Vector3f originalVertex;
- //        trig.getOriginalVertex(vi, originalVertex);
+        Vector3f originalVertex;
+        trig.getOriginalVertex(vi, originalVertex);
 
- //        vector <float> weights = skeleton.getWeights(vi);
+        vector <float> weights = skeleton.getWeights(vi);
 
- //        Vector3f sum(0,0,0);
+        Vector3f sum(0,0,0);
 
-	// 	for (int bi = 0; bi < skeleton.jointNum(); bi++) {
- //            Matrix4f current = skeleton.getCurrentTransformMatrix(bi, bi);
- //            Matrix4f original = skeleton.getOriginalTransformMatrix(bi, bi);
+		for (int bi = 0; bi < skeleton.jointNum(); bi++) {
+            Matrix4f current = skeleton.getCurrentTransformMatrix(bi, bi);
+            Matrix4f original = skeleton.getOriginalTransformMatrix(bi, bi);
 
- //            Vector3f newPos = current * original * originalVertex;
+            Vector3f newPos = current * !original * originalVertex;
 
- //            // Add the weights.
- //            newPos *= weights[bi];
+            // Add the weights.
+            newPos *= weights[bi];
 
- //            sum = sum + newPos;
-	// 	}
+            sum = sum + newPos;
+		}
 
- //        trig.setVertex(vi, sum);
-	// }
+        trig.setVertex(vi, sum);
+	}
 
     glutPostRedisplay();
 }
@@ -618,30 +618,6 @@ void myDisplay()
 			glVertex3f(v1[0],v1[1],v1[2]);
 		glEnd();
     }
-
-	// Draw skeleton
-    int jointNum = skeleton.jointNum();
-
-    for (int i = 0 ; i < jointNum; i++)
-	{
-        // Get joint
-        Vector3f joint;
-		skeleton.getCurrentJoint(i, joint);
-		
-        // Get index of no parent
-        int parentIndex = skeleton.getJointParent(i);
-
-		// The first joint has no parent.
-		if (parentIndex != -1)
-		{
-			// Get the parent joint.
-			Vector3f parent;
-			skeleton.getCurrentJoint(parentIndex, parent);
-
-			// Draw a line from the joint to the parent.
-			DrawLine(joint, parent);
-		}
-	}
 
     glutSwapBuffers();
 }
