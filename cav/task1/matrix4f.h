@@ -72,7 +72,7 @@ class Vector3f {
 		return *this;
 	};
 
-	Vector3f & move(float x, float y, float z)
+	void move(float x, float y, float z)
 	{
 		_item[0] += x;
 		_item[1] += y;
@@ -133,14 +133,11 @@ class Matrix4f {
 		_item[0][0] = _item[1][1] = _item[2][2] = _item[3][3] = 1.;
 	}
 
-
-
 	Matrix4f() 
 	{ 
 		for (int i = 0; i< 4; i++) 
 			for (int j = 0; j< 4; j++) _item[i][j] = 0; 
 	}
-
 
   	Matrix4f(const float & a00, const float & a01, const float & a02, const float & a03, 
 		 const float & a10, const float & a11, const float & a12, const float & a13, 
@@ -152,7 +149,6 @@ class Matrix4f {
 		_item[2][0]=a20;_item[2][1]=a21;_item[2][2]=a22;_item[2][3]=a23;
 		_item[3][0]=a30;_item[3][1]=a31;_item[3][2]=a32;_item[3][3]=a33;
 	}
-
 
 	float lu(Matrix4f & a, int ip[]);
 

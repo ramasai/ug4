@@ -4,16 +4,6 @@
 
 using namespace std;
 
-ostream & operator << (ostream & stream, Matrix4f & obj) 
-{
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			stream << obj(i,j) << ' ';
-		}
-		stream << '\n';
-	}
-};
-
 //
 // additional functions
 //  create a matrix that is same as the one of OOGL 
@@ -74,7 +64,6 @@ Matrix4f rotZ(const float & rad)
   return mat;
 }
 
-
 float Matrix4f::lu(Matrix4f & a, int ip[])
 {
 	int n = 4;
@@ -118,7 +107,6 @@ float Matrix4f::lu(Matrix4f & a, int ip[])
 EXIT:
 
 	delete [] weight;
-
 	return det;         
 }
 
@@ -152,12 +140,9 @@ float Matrix4f::inv(Matrix4f & a, Matrix4f & a_inv)
 			}
 		}
 
-
-	delete [] ip ;
-
+	delete [] ip;
 	return det;
 }
-
 
 Matrix4f Matrix4f::operator !()
 {
@@ -168,7 +153,6 @@ Matrix4f Matrix4f::operator !()
 
 	return ret;
 }
-
 
 Vector3f operator * (const Matrix4f & mat, const Vector3f & vec) 
 {
@@ -205,9 +189,8 @@ Matrix4f Matrix4f::trans()
 		}
 	}
 
-    	return ret; 
+    return ret; 
 }
-
 
 Matrix4f operator + (const Matrix4f& m1, const Matrix4f& m2)
 {
@@ -235,28 +218,23 @@ Matrix4f operator * (const Matrix4f& m1, const Matrix4f& m2)
     return m;
 }
 
-
-
-
-
-
 Matrix4f & Matrix4f::operator *= (const Matrix4f& m2)
 {
     Matrix4f m;
 
     for (int i = 0; i < 4; i++) {
-	for (int j = 0; j < 4; j++) {
-	    m(i, j) = 0.0;
-	    for (int k = 0; k < 4; k++)
-		m(i, j) += (*this)(i, k) * m2(k, j);
-	}
+		for (int j = 0; j < 4; j++) {
+		    m(i, j) = 0.0;
+		    for (int k = 0; k < 4; k++) {
+				m(i, j) += (*this)(i, k) * m2(k, j);
+		    }
+		}
     }
 
     *this = m;	
 
     return *this;
 }
-
 
 Matrix4f translation(const Vector3f  & vec)
 {
@@ -318,8 +296,6 @@ Vector3f operator * (const Vector3f& v1, const Vector3f& v2)
     return v;
 }
 
-
-
 float distance(Vector3f & v1, Vector3f & v2)
 {
 
@@ -331,11 +307,11 @@ float distance(Vector3f & v1, Vector3f & v2)
 }
 
 
-ostream & operator << (ostream & stream, Vector3f & obj) 
-{
-	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
-	return stream;
-};
+// ostream & operator << (ostream & stream, Vector3f & obj) 
+// {
+// 	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
+// 	return stream;
+// };
 
 
 /***

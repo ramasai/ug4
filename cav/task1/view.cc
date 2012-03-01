@@ -21,6 +21,7 @@ GLfloat xloc = 0, yloc = 0, zloc = 0;
 
 int moving, begin;
 
+// bool skin = true;
 int newModel = 1;
 
 GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};  /* Red diffuse light. */
@@ -41,13 +42,31 @@ static float matSpec2[4] = {0.4, 0., 0., 1.0};
 static float matEmission2[4] = {0.0, 0.0, 0.0, 1.0};
 
 Model trig;
+Skeleton skeleton;
 
 void update()
 {
-    for (int ji = 0; ji < trig.jointNum(); ji++)
+    cout << "Updating..." << endl;
+    for (int ji = 0; ji < skeleton.jointNum(); ji++)
     {
+        cout << "Joint: " << ji << endl;
         // For each joint calculate new position.
-        Vector3f current;
+        Vector3f currentJoint;
+        skeleton.getCurrentJoint(ji, currentJoint);
+
+        cout << "  Before Joint: " << currentJoint << endl;
+
+        int parentIndex = skeleton.getJointParent(ji);
+
+        Matrix4f M = skeleton.getCurrentTransformMatrix(ji);
+        // if (ji == 0) cout << "M" << M << endl;
+
+        Vector3f localCoords = skeleton.getLocalCoords(ji);
+        cout << "  Local Joint: " << localCoords << endl;
+
+        currentJoint = (M * localCoords) + skeleton.getRecursiveCoords(ji);
+        cout << "  After Joint: " << currentJoint << endl;
+        skeleton.setCurrentJoint(ji, currentJoint);
     }
 
     // Linear Blending
@@ -88,12 +107,18 @@ void update()
 
 void keyboard(unsigned char key, int x, int y)
 {
-    static float rot = 0.5f;
+    static float rot = 0;
 
 	switch (key) {
 		case 'w':
-			// trig.rotateJointX(19, rot);
+            cout << "Rotating..." << endl;
+            rot += M_PI/200;
+			skeleton.rotateJointX(14, rot);
 			break;
+        case 's':
+            cout << "Rotating..." << endl;
+            rot -= M_PI/200;
+            skeleton.rotateJointX(14, rot);
 		default:
 			break;
 	}
@@ -182,20 +207,6 @@ void button(int button, int state)
   }
 }
 
-/*
-bool contain(Edge & e, map < pair <int, int> , Edge > & list)
-{
-
-    pair <int, int> key;
-
-    key.first = e.v1;
-    key.second = e.v2;
-
-    if (list.find(key) == list.end()) return false;
-    else return true;
-}
-*/
-
 bool contain(Edge & e, vector < Edge > & list)
 {
     for (int i = 0; i < list.size(); i++)
@@ -233,7 +244,7 @@ int find(Edge & e, vector <Edge> list)
     return -1;
 }
 
-void Model::loadSkeleton(char * filename)
+void Skeleton::loadSkeleton(char * filename)
 {
 	cout << "Loading skeleton... (" << filename << ")" << endl;
     ifstream f(filename);
@@ -251,19 +262,61 @@ void Model::loadSkeleton(char * filename)
         f.getline(buf, sizeof(buf));
         sscanf(buf, "%d %f %f %f %d", &index, &x, &y, &z, &parent);
 
-		Vector3f joint(x, y, z);
-		Vector3f currentJoint(joint);
-		_original.push_back(joint);
-		_current.push_back(currentJoint);
-		_parent.push_back(parent);
+		Vector3f originalJoint(x, y, z);
+        _originalJoints.push_back(originalJoint);
+
+		Vector3f currentJoint(originalJoint);
+		_currentJoints.push_back(currentJoint);
+
+		_parents.push_back(parent);
 	}
 
-    _original.pop_back();
-    _current.pop_back();
-    _parent.pop_back();
+    // There seems to be too many joints. Delete one.
+    _originalJoints.pop_back();
+    _currentJoints.pop_back();
+    _parents.pop_back();
+
+    // For each of the joints
+    for (int i = 0; i < skeleton.jointNum(); ++i)
+    {
+        Vector3f joint = _originalJoints[i];
+
+        int parentIndex = getJointParent(i);
+
+        Matrix4f originalRotationMatrix;
+        originalRotationMatrix.setIdentity();
+
+        Matrix4f currentRotationMatrix;
+        currentRotationMatrix.setIdentity();
+
+        Matrix4f originalTranslationMatrix;
+        Matrix4f currentTranslationMatrix;
+
+        if (parentIndex != -1) {
+            Vector3f parentJoint = _originalJoints[parentIndex];
+            Vector3f translation = joint - parentJoint;
+
+            originalTranslationMatrix.setTranslation(translation);
+            currentTranslationMatrix.setTranslation(translation);
+        }
+        else
+        {
+            Vector3f root(0,0,0);
+            Vector3f translation = joint - root;
+
+            originalTranslationMatrix.setTranslation(translation);
+            currentTranslationMatrix.setTranslation(translation);
+        }
+
+        _originalTranslationMatrix.push_back(originalTranslationMatrix);
+        _currentTranslationMatrix.push_back(currentTranslationMatrix);
+
+        _originalRotationMatrix.push_back(originalRotationMatrix);
+        _currentRotationMatrix.push_back(currentRotationMatrix);
+    }
 }
 
-void Model::loadWeights(char * filename)
+void Skeleton::loadWeights(char * filename)
 {
 	cout << "Loading weights... (" << filename << ")" << endl;
     ifstream f(filename);
@@ -573,22 +626,23 @@ void myDisplay()
     }
 
 	// Draw skeleton
-    int jointNum = trig.jointNum();
-
-	Vector3f joint;
-	int jointParent;
+    int jointNum = skeleton.jointNum();
 
     for (int i = 0 ; i < jointNum; i++)
 	{
-		trig.getCurrentJoint(i, joint);
-		trig.getJointParent(i, jointParent);
+        // Get joint
+        Vector3f joint;
+		skeleton.getCurrentJoint(i, joint);
+		
+        // Get index of no parent
+        int parentIndex = skeleton.getJointParent(i);
 
 		// The first joint has no parent.
-		if (jointParent != -1)
+		if (parentIndex != -1)
 		{
 			// Get the parent joint.
 			Vector3f parent;
-			trig.getCurrentJoint(jointParent, parent);
+			skeleton.getCurrentJoint(parentIndex, parent);
 
 			// Draw a line from the joint to the parent.
 			DrawLine(joint, parent);
@@ -603,7 +657,7 @@ int main(int argc, char **argv)
     // Load the model file into the
     if (argc > 3)  {
         trig.loadModel(argv[1]);
-        trig.loadSkeleton(argv[2]);
+        skeleton.loadSkeleton(argv[2]);
         // trig.loadWeights(argv[3]);
     }
     else {

@@ -15,6 +15,7 @@
 using namespace std;
 
 #include "triangle.h"
+#include "matrix4f.h"
 
 class Model;
 class Edge;
@@ -176,11 +177,21 @@ class Edge;
 // 	return ret;
 // }
 
-// ostream & operator << (ostream & stream, Vector3f & obj)
-// {
-// 	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
-// 	return stream;
-// };
+ostream & operator << (ostream & stream, Vector3f & obj)
+{
+	stream << obj[0] << ' ' << obj[1] << ' ' << obj[2] << ' ';
+	return stream;
+};
+
+ostream & operator << (ostream & stream, Matrix4f & obj) 
+{
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			stream << obj(i,j) << ' ';
+		}
+		stream << '\n';
+	}
+};
 
 class Edge {
 
@@ -274,21 +285,12 @@ class Model
 
 	float _xmax, _xmin, _ymax, _ymin, _zmin, _zmax;
 
-	vector <Vector3f> _original;
-	vector <Vector3f> _current;
-	vector <int> _parent;
-
-	vector < vector <float> > _weights;
-
 public:
 	Model(char * filename) { loadModel(filename) ;};
 	Model() {};
 	void loadModel(char * filename);
-	void loadWeights(char * filename);
-	void loadSkeleton(char * filename);
 
 	int trigNum() { return _trig.size() ;};
-	int jointNum() { return _original.size() ;};
 	int vertexNum() { return _v.size() ;};
 
 	void getTriangleVertices(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
@@ -296,38 +298,6 @@ public:
 		v1 = _v[_trig[i]._vertex[0]];
 		v2 = _v[_trig[i]._vertex[1]];
 		v3 = _v[_trig[i]._vertex[2]];
-	}
-
-	void getOriginalJoint(int i, Vector3f &joint)
-	{
-		joint = _original[i];
-	}
-
-	void getCurrentJoint(int i, Vector3f &joint)
-	{
-		joint = _current[i];
-	}
-
-	void setCurrentJoint(int i, Vector3f &joint)
-	{
-		_current[i] = joint;
-	}
-
-	void getVertex(int i, Vector3f &vertex)
-	{
-		vertex = _v[i];
-	}
-
-	void setVertex(int i, Vector3f vertex)
-	{
-		_v[i][0] = vertex[0];
-		_v[i][1] = vertex[1];
-		_v[i][2] = vertex[2];
-	}
-
-	void getJointParent(int i, int &parent)
-	{
-		parent = _parent[i];
 	}
 
 	void getTriangleNormals(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
@@ -344,11 +314,6 @@ public:
 		v3 = _node[_trig[i]._vertex[2]].cost;
 	}
 
-	vector<float> getWeights(int i)
-	{
-		return _weights[i];
-	}
-
 	float color(int i) { return _trig[i].color();};
 
 	void setMorseMinMax(int i, float min, float max)
@@ -359,11 +324,6 @@ public:
 	void getMorseMinMax(int i, float & min, float & max)
 	{
 		_trig[i].getMorseMinMax(min,max);
-	}
-
-	void setCurrentJointPos(int i, float x, float y, float z)
-	{
-		_current[i].move(x, y, z);
 	}
 
 	void calcTriangleArea()
@@ -378,6 +338,97 @@ public:
 
 			_trig[i]._area = 0.5f*sqrt(v3.dot(v3)*v2.dot(v2) - (v3.dot(v2)*(v3.dot(v2))));
 		}
+	}
+};
+
+class Skeleton {
+	// Joints
+	vector <Vector3f> _originalJoints;
+	vector <Vector3f> _currentJoints;
+	vector <int> _parents;
+
+	// Weights
+	vector < vector <float> > _weights;
+
+	// Transformation Matrices
+	vector < Matrix4f > _originalRotationMatrix;
+	vector < Matrix4f > _currentRotationMatrix;
+
+	vector < Matrix4f > _originalTranslationMatrix;
+	vector < Matrix4f > _currentTranslationMatrix;
+
+public:
+	void loadSkeleton(char * filename);
+	void loadWeights(char * filename);
+	int jointNum() { return _originalJoints.size() ;}
+
+	void getCurrentJoint(int index, Vector3f &vec) {
+		vec = _currentJoints[index];
+	}
+
+	void setCurrentJoint(int index, Vector3f vec) {
+		_currentJoints[index] = vec;
+	}
+
+	int getJointParent(int index) {
+		return _parents[index];
+	}
+
+	Vector3f getRootOffset() {
+		return _originalJoints[0];
+	}
+
+	Vector3f getLocalCoords(int index) {
+		Matrix4f translationMatrix = _originalTranslationMatrix[index];
+		Vector3f localCoords(translationMatrix(0,3),
+			translationMatrix(1,3),
+			translationMatrix(2,3));
+
+		return localCoords;
+	}
+
+	Vector3f getRecursiveCoords(int index) {
+		if (index == 0)
+		{
+			return Vector3f(0,0,0);
+		}
+
+		Vector3f ret;
+
+		int parentIndex = getJointParent(index);
+		ret += getLocalCoords(parentIndex);
+		ret += getRecursiveCoords(parentIndex);
+
+		return ret;
+	}
+
+	Matrix4f getCurrentTransformMatrix(int index) {
+		Matrix4f matrix;
+		matrix.setIdentity();
+
+		int parentIndex = getJointParent(index);
+
+		Matrix4f parentMatrix;
+
+		if (parentIndex != -1) {
+			parentMatrix = getCurrentTransformMatrix(parentIndex);
+		} else {
+			parentMatrix.setIdentity();
+		}
+
+		// if (index == 0) cout << "Parent Matrix:" << endl << &parentMatrix << endl;
+
+		matrix *= parentMatrix;
+		matrix *= _currentRotationMatrix[index];
+
+		// if (index == 0) cout << "Transform Matrix:" << endl << matrix << endl;
+
+		return matrix;
+	}
+
+	void rotateJointX(int index, float rotation)
+	{
+		_currentRotationMatrix[index] = rotX(rotation);
 	}
 };
 
