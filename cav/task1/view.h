@@ -293,6 +293,14 @@ public:
 	int trigNum() { return _trig.size() ;};
 	int vertexNum() { return _v.size() ;};
 
+	void getVertex(int index, Vector3f &vec) {
+		vec = _v[index];
+	}
+
+	void setVertex(int index, Vector3f vec) {
+		_v[index] = vec;
+	}
+
 	void getTriangleVertices(int i, Vector3f & v1, Vector3f & v2, Vector3f & v3)
 	{
 		v1 = _v[_trig[i]._vertex[0]];
@@ -370,8 +378,16 @@ public:
 		_currentJoints[index] = vec;
 	}
 
+	void getOriginalJoint(int index, Vector3f &vec) {
+		vec = _originalJoints[index];
+	}
+
 	int getJointParent(int index) {
 		return _parents[index];
+	}
+
+	vector < float > getWeights(int index) {
+		return _weights[index];
 	}
 
 	Vector3f getRootOffset() {

@@ -70,37 +70,37 @@ void update()
     }
 
     // Linear Blending
-	// for (int vi = 0; vi < trig.vertexNum(); vi++)
-	// {
- //        Vector3f vertex;
- //        trig.getVertex(vi, vertex);
- //        // cout << "Current Skin Vertex: " << vertex << endl;
+	for (int vi = 0; vi < trig.vertexNum(); vi++)
+	{
+        Vector3f vertex;
+        trig.getVertex(vi, vertex);
+        // cout << "Current Skin Vertex: " << vertex << endl;
 
- //        vector <float> weights = trig.getWeights(vi);
+        vector <float> weights = skeleton.getWeights(vi);
 
- //        Vector3f sum(0,0,0);
+        Vector3f sum(0,0,0);
 
-	// 	for (int bi = 0; bi < trig.jointNum(); bi++)
-	// 	{
- //            Vector3f original;
- //            trig.getOriginalJoint(bi, original);
- //            // cout << "Original Joint (" << bi << "): " << vertex << endl;
+		for (int bi = 0; bi < skeleton.jointNum(); bi++)
+		{
+            Vector3f original;
+            skeleton.getOriginalJoint(bi, original);
+            // cout << "Original Joint (" << bi << "): " << vertex << endl;
 
- //            Vector3f current;
- //            trig.getCurrentJoint(bi, current);
- //            // cout << " Current Joint (" << bi << "): " << vertex << endl;
+            Vector3f current;
+            skeleton.getCurrentJoint(bi, current);
+            // cout << " Current Joint (" << bi << "): " << vertex << endl;
 
- //            Vector3f newPos = vertex - original + current;
- //            // cout << "New Vertex: " << sum << endl;
+            Vector3f newPos = vertex - original + current;
+            // cout << "New Vertex: " << sum << endl;
 
- //            newPos *= weights[bi];
- //            // cout << "      Weights (" << bi << "): " << weights[bi] << endl;
+            newPos *= weights[bi];
+            // cout << "      Weights (" << bi << "): " << weights[bi] << endl;
 
- //            sum = sum + newPos;
-	// 	}
+            sum = sum + newPos;
+		}
 
- //        trig.setVertex(vi, sum);
-	// }
+        trig.setVertex(vi, sum);
+	}
 
     glutPostRedisplay();
 }
@@ -113,12 +113,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 'w':
             cout << "Rotating..." << endl;
             rot += M_PI/200;
-			skeleton.rotateJointX(14, rot);
+			skeleton.rotateJointX(5, rot);
 			break;
         case 's':
             cout << "Rotating..." << endl;
             rot -= M_PI/200;
-            skeleton.rotateJointX(14, rot);
+            skeleton.rotateJointX(5, rot);
 		default:
 			break;
 	}
@@ -601,28 +601,28 @@ void myDisplay()
         // Set the skin colour
         GLfloat skinColor[] = {0.9, 0.2, 0.5, 1.0};
 
-		// glBegin(GL_TRIANGLES);
-		// 	// Draw model
-		// 	skinColor[1] = m1; skinColor[0] = 1-m1;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n1[0],-n1[1],-n1[2]);
-		// 	glVertex3f(v1[0],v1[1],v1[2]);
+		glBegin(GL_TRIANGLES);
+			// Draw model
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
 
-		// 	skinColor[1] = m2; skinColor[0] = 1-m2;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n2[0],-n2[1],-n2[2]);
-		// 	glVertex3f(v2[0],v2[1],v2[2]);
+			skinColor[1] = m2; skinColor[0] = 1-m2;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n2[0],-n2[1],-n2[2]);
+			glVertex3f(v2[0],v2[1],v2[2]);
 
-		// 	skinColor[1] = m3; skinColor[0] = 1-m3;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n3[0],-n3[1],-n3[2]);
-		// 	glVertex3f(v3[0],v3[1],v3[2]);
+			skinColor[1] = m3; skinColor[0] = 1-m3;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n3[0],-n3[1],-n3[2]);
+			glVertex3f(v3[0],v3[1],v3[2]);
 
-		// 	skinColor[1] = m1; skinColor[0] = 1-m1;
-		// 	glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
-		// 	glNormal3f(-n1[0],-n1[1],-n1[2]);
-		// 	glVertex3f(v1[0],v1[1],v1[2]);
-		// glEnd();
+			skinColor[1] = m1; skinColor[0] = 1-m1;
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
+			glNormal3f(-n1[0],-n1[1],-n1[2]);
+			glVertex3f(v1[0],v1[1],v1[2]);
+		glEnd();
     }
 
 	// Draw skeleton
@@ -658,7 +658,7 @@ int main(int argc, char **argv)
     if (argc > 3)  {
         trig.loadModel(argv[1]);
         skeleton.loadSkeleton(argv[2]);
-        // trig.loadWeights(argv[3]);
+        skeleton.loadWeights(argv[3]);
     }
     else {
         cerr << argv[0] << " <model filename> <initial skeleton filename> <weights filename>" << endl;
