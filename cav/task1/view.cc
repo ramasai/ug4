@@ -46,61 +46,53 @@ Skeleton skeleton;
 
 void update()
 {
-    cout << "Updating..." << endl;
+    // cout << "Updating..." << endl;
     for (int ji = 0; ji < skeleton.jointNum(); ji++)
     {
-        cout << "Joint: " << ji << endl;
         // For each joint calculate new position.
         Vector3f currentJoint;
         skeleton.getCurrentJoint(ji, currentJoint);
 
-        cout << "  Before Joint: " << currentJoint << endl;
+        // cout << "  Before Joint: " << currentJoint << endl;
 
-        int parentIndex = skeleton.getJointParent(ji);
-
-        Matrix4f M = skeleton.getCurrentTransformMatrix(ji);
-        // if (ji == 0) cout << "M" << M << endl;
+        Matrix4f M = skeleton.getCurrentTransformMatrix(ji, ji);
+        // if (ji > 1) cout << "M" << endl << M << endl;
 
         Vector3f localCoords = skeleton.getLocalCoords(ji);
-        cout << "  Local Joint: " << localCoords << endl;
+        // cout << "  Local Joint: " << localCoords << endl;
 
-        currentJoint = (M * localCoords) + skeleton.getRecursiveCoords(ji);
-        cout << "  After Joint: " << currentJoint << endl;
+        currentJoint = (M * localCoords);
+        // cout << "  After Joint: " << currentJoint << endl;
         skeleton.setCurrentJoint(ji, currentJoint);
     }
 
     // Linear Blending
-	for (int vi = 0; vi < trig.vertexNum(); vi++)
-	{
-        Vector3f vertex;
-        trig.getVertex(vi, vertex);
-        // cout << "Current Skin Vertex: " << vertex << endl;
+	// for (int vi = 0; vi < trig.vertexNum(); vi++)
+	// {
+ //        Vector3f vertex;
+ //        trig.getVertex(vi, vertex);
 
-        vector <float> weights = skeleton.getWeights(vi);
+ //        Vector3f originalVertex;
+ //        trig.getOriginalVertex(vi, originalVertex);
 
-        Vector3f sum(0,0,0);
+ //        vector <float> weights = skeleton.getWeights(vi);
 
-		for (int bi = 0; bi < skeleton.jointNum(); bi++)
-		{
-            Vector3f original;
-            skeleton.getOriginalJoint(bi, original);
-            // cout << "Original Joint (" << bi << "): " << vertex << endl;
+ //        Vector3f sum(0,0,0);
 
-            Vector3f current;
-            skeleton.getCurrentJoint(bi, current);
-            // cout << " Current Joint (" << bi << "): " << vertex << endl;
+	// 	for (int bi = 0; bi < skeleton.jointNum(); bi++) {
+ //            Matrix4f current = skeleton.getCurrentTransformMatrix(bi, bi);
+ //            Matrix4f original = skeleton.getOriginalTransformMatrix(bi, bi);
 
-            Vector3f newPos = vertex - original + current;
-            // cout << "New Vertex: " << sum << endl;
+ //            Vector3f newPos = current * original * originalVertex;
 
-            newPos *= weights[bi];
-            // cout << "      Weights (" << bi << "): " << weights[bi] << endl;
+ //            // Add the weights.
+ //            newPos *= weights[bi];
 
-            sum = sum + newPos;
-		}
+ //            sum = sum + newPos;
+	// 	}
 
-        trig.setVertex(vi, sum);
-	}
+ //        trig.setVertex(vi, sum);
+	// }
 
     glutPostRedisplay();
 }
@@ -111,12 +103,12 @@ void keyboard(unsigned char key, int x, int y)
 
 	switch (key) {
 		case 'w':
-            cout << "Rotating..." << endl;
+            // cout << "Rotating..." << endl;
             rot += M_PI/200;
 			skeleton.rotateJointX(5, rot);
 			break;
         case 's':
-            cout << "Rotating..." << endl;
+            // cout << "Rotating..." << endl;
             rot -= M_PI/200;
             skeleton.rotateJointX(5, rot);
 		default:
@@ -292,24 +284,25 @@ void Skeleton::loadSkeleton(char * filename)
         Matrix4f originalTranslationMatrix;
         Matrix4f currentTranslationMatrix;
 
+        Vector3f trans;
+
         if (parentIndex != -1) {
             Vector3f parentJoint = _originalJoints[parentIndex];
-            Vector3f translation = joint - parentJoint;
-
-            originalTranslationMatrix.setTranslation(translation);
-            currentTranslationMatrix.setTranslation(translation);
+            trans = joint - parentJoint;
         }
         else
         {
             Vector3f root(0,0,0);
-            Vector3f translation = joint - root;
-
-            originalTranslationMatrix.setTranslation(translation);
-            currentTranslationMatrix.setTranslation(translation);
+            trans = joint - root;
         }
 
-        _originalTranslationMatrix.push_back(originalTranslationMatrix);
-        _currentTranslationMatrix.push_back(currentTranslationMatrix);
+        translation(trans);
+
+        Matrix4f o = translation(trans);
+        Matrix4f c = translation(trans);
+
+        _originalTranslationMatrix.push_back(o);
+        _currentTranslationMatrix.push_back(c);
 
         _originalRotationMatrix.push_back(originalRotationMatrix);
         _currentRotationMatrix.push_back(currentRotationMatrix);
@@ -405,6 +398,7 @@ void Model::loadModel(char * filename)
 
             // Store the vertex information.
             _v.push_back(Vector3f(x,y,z));
+            _vo.push_back(Vector3f(x,y,z));
 
             // Store the normal information.
             _vn.push_back(Vector3f(0.f,0.f,1.f));

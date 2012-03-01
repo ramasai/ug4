@@ -122,8 +122,7 @@ class Matrix4f {
 
 	float  operator () (int i, int j) const {
 		return _item[i][j];
-    	}
-
+    }
 	
 	void setIdentity() 
 	{

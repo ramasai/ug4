@@ -278,6 +278,7 @@ float fmin(float f1, float f2, float f3) {
 class Model
 {
 	vector <Vector3f> _v;
+	vector <Vector3f> _vo;
 	vector <Vector3f> _vn;
 	vector <Triangle> _trig;
 	vector <Node> _node;
@@ -294,6 +295,10 @@ public:
 	int vertexNum() { return _v.size() ;};
 
 	void getVertex(int index, Vector3f &vec) {
+		vec = _v[index];
+	}
+
+	void getOriginalVertex(int index, Vector3f &vec) {
 		vec = _v[index];
 	}
 
@@ -418,7 +423,7 @@ public:
 		return ret;
 	}
 
-	Matrix4f getCurrentTransformMatrix(int index) {
+	Matrix4f getCurrentTransformMatrix(int index, int orig) {
 		Matrix4f matrix;
 		matrix.setIdentity();
 
@@ -427,17 +432,41 @@ public:
 		Matrix4f parentMatrix;
 
 		if (parentIndex != -1) {
-			parentMatrix = getCurrentTransformMatrix(parentIndex);
+			parentMatrix = getCurrentTransformMatrix(parentIndex, orig);
 		} else {
 			parentMatrix.setIdentity();
 		}
 
-		// if (index == 0) cout << "Parent Matrix:" << endl << &parentMatrix << endl;
-
 		matrix *= parentMatrix;
 		matrix *= _currentRotationMatrix[index];
 
-		// if (index == 0) cout << "Transform Matrix:" << endl << matrix << endl;
+		if (index != orig) {
+			matrix *= _currentTranslationMatrix[index];
+		}
+
+		return matrix;
+	}
+
+	Matrix4f getOriginalTransformMatrix(int index, int orig) {
+		Matrix4f matrix;
+		matrix.setIdentity();
+
+		int parentIndex = getJointParent(index);
+
+		Matrix4f parentMatrix;
+
+		if (parentIndex != -1) {
+			parentMatrix = getOriginalTransformMatrix(parentIndex, orig);
+		} else {
+			parentMatrix.setIdentity();
+		}
+
+		matrix *= parentMatrix;
+		matrix *= _originalRotationMatrix[index];
+
+		if (index != orig) {
+			matrix *= _originalTranslationMatrix[index];
+		}
 
 		return matrix;
 	}
