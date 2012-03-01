@@ -97,14 +97,20 @@ void update()
     glutPostRedisplay();
 }
 
+float rot = 0;
+
 void keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 		case 'w':
-			skeleton.rotateJointX(5, M_PI/20);
+            // cout << "Rotating..." << endl;
+            rot += M_PI/200;
+			skeleton.rotateJointX(5, rot);
 			break;
         case 's':
-            skeleton.rotateJointX(5, -M_PI/20);
+            // cout << "Rotating..." << endl;
+            rot -= M_PI/200;
+            skeleton.rotateJointX(5, rot);
 		default:
 			break;
 	}

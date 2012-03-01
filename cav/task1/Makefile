@@ -11,7 +11,7 @@ HEADERS=$(SOURCES:.cc=.h)
 all: $(SOURCES) $(EXECUTABLE) run
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(FRAMEWORKS) $(OBJECTS) -o $@
+	$(CXX) $(LIBS) $(OBJECTS) -o $@
 
 .cc.o:
 	$(CXX) $(OPTS) -c $< -o $@
