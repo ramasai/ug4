@@ -1,5 +1,6 @@
-Computer Animation Coursework
-0824586
+= Computer Animation Coursework
+
+Matric Number: 0824586
 
 == Work Done
 
@@ -21,6 +22,16 @@ Other code that I have changed is mainly in the `Skeleton` class. This class
 does all of the storage and calculation of the matrices and weights.
 
 == Compilation
+
+    g++ view.cc matrix4f.cc -O3 -lglut -lGLU -lGL -o cav
+
+== Running
+
+    ./cav <model> <skeleton> <weights>
+
+For example:
+
+	./cav data/arma2.obj data/skeleton2.out data/attachment2.out
 
 == Controls
 
