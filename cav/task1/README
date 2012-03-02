@@ -1,0 +1,37 @@
+Computer Animation Coursework
+0824586
+
+== Work Done
+
+Skeleton movement and skinning have been completed with transform matrices and
+linear blending respectively. The code is almost a direct translation of the
+equations in the notes with that addition of some caching of the transformation
+matrices in order to reduce the time it takes to re-render the image.
+
+The majority of the interesting work is done in the `update()` function which
+is called after any of the joints are rotated. This function does 4 tasks:
+
+ - Calculates the new positions of the joints with any new rotations.
+ - Caches all of the new transformation matrices to stop the recursive matrix
+   chain calculation being called for every skin vertex.
+ - Skins the model using linear blending.
+ - Schedules a redraw of the image.
+
+Other code that I have changed is mainly in the `Skeleton` class. This class
+does all of the storage and calculation of the matrices and weights.
+
+== Compilation
+
+== Controls
+
+The model can be controlled with buttons on the keyboard.
+
+Q/E - Shaking the head.
+W/S - Bending the body (bowing).
+A/D - Turning the body.
+R/F - Bending the left hip.
+T/G - Bending the right hip.
+Y/H - Turning the left shoulder.
+U/J - Turning the right shoulder.
+X/C - Bending the left knee.
+V/B - Bending the right knee.
