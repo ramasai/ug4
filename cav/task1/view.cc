@@ -645,29 +645,29 @@ void myDisplay()
         trig.getTriangleNormals(i,n1,n2,n3);
         trig.getMorseValue(i, m1, m2, m3);
 
-        m1 = m2 = m3 = trig.color(i);
+        //m1 = m2 = m3 = trig.color(i);
 
         // Set the skin colour
-        GLfloat skinColor[] = {0.1, 0.1, 0.1, 0.1};
+        GLfloat skinColor[] = {0.8, 0.2, 0.3, 0.7};
 
 		glBegin(GL_TRIANGLES);
 			// Draw model
-			skinColor[1] = m1; skinColor[0] = 1-m1;
+			//skinColor[1] = m1; skinColor[0] = 1-m1;
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
 			glNormal3f(-n1[0],-n1[1],-n1[2]);
 			glVertex3f(v1[0],v1[1],v1[2]);
 
-			skinColor[1] = m2; skinColor[0] = 1-m2;
+			//skinColor[1] = m2; skinColor[0] = 1-m2;
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
 			glNormal3f(-n2[0],-n2[1],-n2[2]);
 			glVertex3f(v2[0],v2[1],v2[2]);
 
-			skinColor[1] = m3; skinColor[0] = 1-m3;
+			//skinColor[1] = m3; skinColor[0] = 1-m3;
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
 			glNormal3f(-n3[0],-n3[1],-n3[2]);
 			glVertex3f(v3[0],v3[1],v3[2]);
 
-			skinColor[1] = m1; skinColor[0] = 1-m1;
+			//skinColor[1] = m1; skinColor[0] = 1-m1;
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, skinColor);
 			glNormal3f(-n1[0],-n1[1],-n1[2]);
 			glVertex3f(v1[0],v1[1],v1[2]);
