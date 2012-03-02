@@ -54,6 +54,7 @@ void update()
         skeleton.getCurrentJoint(ji, currentJoint);
 
         // cout << "  Before Joint: " << currentJoint << endl;
+		// //sldjkfsf
 
         Matrix4f M = skeleton.getCurrentTransformMatrix(ji, ji);
         // if (ji > 1) cout << "M" << endl << M << endl;
@@ -65,6 +66,14 @@ void update()
         // cout << "  After Joint: " << currentJoint << endl;
         skeleton.setCurrentJoint(ji, currentJoint);
     }
+
+	for (int ji = 0; ji < skeleton.jointNum(); ji++) {
+		Matrix4f current = skeleton.getCurrentTransformMatrix(ji, ji);
+		Matrix4f original = skeleton.getOriginalTransformMatrix(ji, ji);
+
+		skeleton.cacheMatrixCurrent(ji, current);
+		skeleton.cacheMatrixOriginal(ji, original);
+	}
 
     // Linear Blending
 	for (int vi = 0; vi < trig.vertexNum(); vi++)
@@ -80,8 +89,8 @@ void update()
         Vector3f sum(0,0,0);
 
 		for (int bi = 0; bi < skeleton.jointNum(); bi++) {
-            Matrix4f current = skeleton.getCurrentTransformMatrix(bi, bi);
-            Matrix4f original = skeleton.getOriginalTransformMatrix(bi, bi);
+            Matrix4f current = skeleton.getCurrentTransformMatrixCached(bi);
+            Matrix4f original = skeleton.getOriginalTransformMatrixCached(bi);
 
             Vector3f newPos = current * !original * originalVertex;
 
@@ -99,13 +108,65 @@ void update()
 
 void keyboard(unsigned char key, int x, int y)
 {
+	skeleton.resetJoints();
+
 	switch (key) {
 		case 'w':
 			skeleton.rotateJointX(5, M_PI/20);
 			break;
         case 's':
             skeleton.rotateJointX(5, -M_PI/20);
+			break;
+		case 'a':
+			skeleton.rotateJointY(5, M_PI/20);
+			break;
+        case 'd':
+            skeleton.rotateJointY(5, -M_PI/20);
+			break;
+		case 'q':
+			skeleton.rotateJointY(7, -M_PI/20);
+			break;
+        case 'e':
+            skeleton.rotateJointY(7, M_PI/20);
+			break;
+		case 'r':
+			skeleton.rotateJointX(1, -M_PI/20);
+			break;
+        case 'f':
+            skeleton.rotateJointX(1, M_PI/20);
+			break;
+		case 'x':
+			skeleton.rotateJointX(2, -M_PI/20);
+			break;
+        case 'c':
+            skeleton.rotateJointX(1, M_PI/20);
+			break;
+		case 'v':
+			skeleton.rotateJointX(19, -M_PI/20);
+			break;
+        case 'b':
+            skeleton.rotateJointX(19, M_PI/20);
+			break;
+		case 't':
+			skeleton.rotateJointX(18, -M_PI/20);
+			break;
+        case 'g':
+            skeleton.rotateJointX(18, M_PI/20);
+			break;
+		case 'y':
+			skeleton.rotateJointX(14, -M_PI/20);
+			break;
+        case 'h':
+            skeleton.rotateJointX(14, M_PI/20);
+			break;
+		case 'u':
+			skeleton.rotateJointX(9, -M_PI/20);
+			break;
+        case 'j':
+            skeleton.rotateJointX(9, M_PI/20);
+			break;
 		default:
+			return;
 			break;
 	}
 
@@ -587,7 +648,7 @@ void myDisplay()
         m1 = m2 = m3 = trig.color(i);
 
         // Set the skin colour
-        GLfloat skinColor[] = {0.9, 0.2, 0.5, 1.0};
+        GLfloat skinColor[] = {0.1, 0.1, 0.1, 0.1};
 
 		glBegin(GL_TRIANGLES);
 			// Draw model

@@ -370,6 +370,9 @@ class Skeleton {
 	vector < Matrix4f > _originalTranslationMatrix;
 	vector < Matrix4f > _currentTranslationMatrix;
 
+	Matrix4f originalCache[22];
+	Matrix4f currentCache[22];
+
 public:
 	void loadSkeleton(char * filename);
 	void loadWeights(char * filename);
@@ -389,6 +392,22 @@ public:
 
 	int getJointParent(int index) {
 		return _parents[index];
+	}
+
+	void cacheMatrixCurrent(int ji, Matrix4f current) {
+		currentCache[ji] = current;
+	}
+
+	void cacheMatrixOriginal(int ji, Matrix4f original) {
+		originalCache[ji] = original;
+	}
+
+	Matrix4f getCurrentTransformMatrixCached(int bi) {
+		return currentCache[bi];
+	}
+
+	Matrix4f getOriginalTransformMatrixCached(int bi) {
+		return originalCache[bi];
 	}
 
 	vector < float > getWeights(int index) {
@@ -471,9 +490,24 @@ public:
 		return matrix;
 	}
 
+	void resetJoints() {
+		for(int i = 0; i < jointNum(); i++)
+		{
+			Matrix4f ident;
+			ident.setIdentity();
+
+			_currentRotationMatrix[i] = ident;
+		}
+	}
+
 	void rotateJointX(int index, float rotation)
 	{
 		_currentRotationMatrix[index] = rotX(rotation);
+	}
+
+	void rotateJointY(int index, float rotation)
+	{
+		_currentRotationMatrix[index] = rotY(rotation);
 	}
 };
 
