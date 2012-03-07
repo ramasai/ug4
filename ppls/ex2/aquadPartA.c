@@ -63,9 +63,7 @@ int main(int argc, char **argv ) {
 }
 
 double farmer(int numprocs) {
-  // You must complete this function
 }
 
 void worker(int mypid) {
-  // You must complete this function
 }
