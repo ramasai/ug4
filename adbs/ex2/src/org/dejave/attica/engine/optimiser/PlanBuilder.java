@@ -968,7 +968,7 @@ public class PlanBuilder {
                 //
                 //////////////////////////////////////////////
                 
-                /*
+                
                   Relation leftRel = left.getOutputRelation();
                   Relation rightRel = right.getOutputRelation();
                   VariableVariableQualification vvq =
@@ -1006,7 +1006,7 @@ public class PlanBuilder {
                   // Use your own implementation of sort here
                   //
                   /////////////////////////////////////////////////////
-                  
+                  /*
                   int bufferPages = sm.getNumberOfBufferPoolPages();
                   int half = bufferPages / 2;
                   ExternalSort newLeft = new ExternalSort(left, sm, leftSlots,
