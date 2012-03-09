@@ -117,31 +117,60 @@ public class MergeJoin extends NestedLoopsJoin {
      * @throws EngineException thrown whenever there is something
      * wrong with setting this operator up.
      */
-    
     @Override
     protected void setup() throws EngineException {
         try {
-            System.out.println("done");
-            ////////////////////////////////////////////
-            //
-            // YOUR CODE GOES HERE
-            //
-            ////////////////////////////////////////////
-            
-            ////////////////////////////////////////////
-            //
-            // the output should reside in the output file
-            //
-            ////////////////////////////////////////////
+            outputMan = new RelationIOManager(getStorageManager(), 
+                                 getOutputRelation(),
+                                 outputFile);
 
-            //
-            // you may need to uncomment the following lines if you
-            // have not already instantiated the manager -- it all
-            // depends on how you have implemented the operator
-            //
-            //outputMan = new RelationIOManager(getStorageManager(), 
-            //                                  getOutputRelation(),
-            //                                  outputFile);
+            // store the left input
+            String leftFile = FileUtil.createTempFileName();
+            System.err.println("Left file: " + leftFile);
+            getStorageManager().createFile(leftFile);
+            Relation leftRel = getInputOperator(LEFT).getOutputRelation();
+            RelationIOManager left = new RelationIOManager(getStorageManager(), leftRel, leftFile);
+            
+            // store the right input
+            String rightFile = FileUtil.createTempFileName();
+            getStorageManager().createFile(rightFile);
+            System.err.println("Right file: " + rightFile);
+            Relation rightRel = getInputOperator(RIGHT).getOutputRelation();
+            RelationIOManager right = new RelationIOManager(getStorageManager(), rightRel, rightFile);
+
+            Iterator<Tuple> R = left.tuples().iterator();
+            Iterator<Tuple> S = right.tuples().iterator();
+
+            while(R.hasNext() && S.hasNext()) {
+                Tuple r = R.next();
+                Tuple gs = S.next();
+
+                while (r.getValue(leftSlot).compareTo(gs.getValue(rightSlot)) < 0
+                    && R.hasNext()) {
+                    r = R.next();
+                }
+
+                while (r.getValue(leftSlot).compareTo(gs.getValue(rightSlot)) > 0
+                    && S.hasNext()) {
+                    gs = S.next();
+                }
+
+                Tuple s = null;
+                while (tuplesAreEqual(r, gs)) {
+                    s = gs;
+
+                    while (tuplesAreEqual(r, s) && S.hasNext()) {
+                        Tuple newTuple = combineTuples(r, s);
+                        outputMan.insertTuple(newTuple);
+                        s = S.next();
+                    }
+
+                    r = R.next();
+                }
+
+                if (gs != null)
+                    gs = s;
+            }
 
             // open the iterator over the output
             outputTuples = outputMan.tuples().iterator();
@@ -166,7 +195,6 @@ public class MergeJoin extends NestedLoopsJoin {
      * @throws EngineException whenever the operator cannot clean up
      * after itself.
      */
-    /*
     @Override
     protected void cleanup() throws EngineException {
         try {
@@ -185,7 +213,11 @@ public class MergeJoin extends NestedLoopsJoin {
             throw ee;
         }
     } // cleanup()
-    */
+
+    private boolean tuplesAreEqual(Tuple leftTuple, Tuple rightTuple) {
+        PredicateTupleInserter.insertTuples(leftTuple, rightTuple, getPredicate());
+        return PredicateEvaluator.evaluate(getPredicate());
+    }
 
     /**
      * Inner method to propagate a tuple.

@@ -1006,21 +1006,19 @@ public class PlanBuilder {
                   // Use your own implementation of sort here
                   //
                   /////////////////////////////////////////////////////
-                  /*
                   int bufferPages = sm.getNumberOfBufferPoolPages();
                   int half = bufferPages / 2;
                   ExternalSort newLeft = new ExternalSort(left, sm, leftSlots,
                       half > 10 ? half : 10);
                   ExternalSort newRight = new ExternalSort(right, sm,
                       rightSlots, half > 10 ? half : 10);
-                  // create the merge operation and combine it
+                  // // create the merge operation and combine it
                   pred = createJoinPredicate(newLeft, newRight, join);
                   return new MergeJoin(newLeft, newRight, sm, 
                                        leftSlots[0], rightSlots[0], pred);
-                  */
 
-                  pred = createJoinPredicate(left, right, join);
-                  return new NestedLoopsJoin(left, right, sm, pred);
+                  // pred = createJoinPredicate(left, right, join);
+                  // return new NestedLoopsJoin(left, right, sm, pred);
             }
         }
         catch (EngineException ee) {
