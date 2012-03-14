@@ -106,7 +106,7 @@ double farmer(int numprocs) {
 				numworking--;
 			}
 		}
-		else if (!flag && !is_empty(s))
+		else if (!flag && !is_empty(s) && numworking != 1)
 		{
 			double* new_data = pop(s);
 			MPI_Send(new_data, 2, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
@@ -132,12 +132,16 @@ void worker(int mypid) {
 	MPI_Status status;
 
 	while(1) {
-		/*fprintf(stdout, "Worker %d waiting...\n", mypid);*/
+		// Get the task.
 		MPI_Recv(data, 2, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		
+		// If the task tells us to die: die.
 		if (status.MPI_TAG == TAG_KILL) { break; }
-		/*fprintf(stdout, "Worker %d got: { %f, %f }\n", mypid, data[0], data[1]);*/
+
+		// Slow down.
 		usleep(SLEEPTIME);
 
+		// Calculations.
 		left = data[0];
 		right = data[1];
 		mid = (left + right) / 2;
@@ -150,21 +154,19 @@ void worker(int mypid) {
 		rarea = (fmid + fright) * (right - mid) / 2;
 		lrarea = (fleft + fright) * ((right - left)/2);
 
+		// Are we accurate enough yet?
 		if( fabs((larea + rarea) - lrarea) > EPSILON ) {
-			// Send the task back to the farmer.
+			// Send the tasks back to the farmer.
 			data[0] = left;
 			data[1] = mid;
-			/*fprintf(stdout, "Worker %d sent new task: { %f, %f }\n", mypid, data[0], data[1]);*/
 			MPI_Send(data, 2, MPI_DOUBLE, 0, TAG_NEW_TASK, MPI_COMM_WORLD);
 
 			data[0] = mid;
 			data[1] = right;
-			/*fprintf(stdout, "Worker %d sent new task: { %f, %f }\n", mypid, data[0], data[1]);*/
 			MPI_Send(data, 2, MPI_DOUBLE, 0, TAG_NEW_TASK, MPI_COMM_WORLD);
 		} else {
 			// Send the answer back to the farmer.
 			data[0] = larea + rarea;
-			/*fprintf(stdout, "Worker %d sent new result: { %f }\n", mypid, data[0]);*/
 			MPI_Send(data, 2, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
 		}
 	}
