@@ -102,16 +102,14 @@ double farmer(int numprocs) {
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				push(data, s);
 				tasks_per_process[status.MPI_SOURCE]++;
-
-				numworking--;
 			} else {
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
 				// Add our new answer to the sum.
 				answer += data[0];
-
-				// This worker is now free for more work.
-				numworking--;
 			}
+
+			numworking--;
 		}
 
 		if (!is_empty(s))
