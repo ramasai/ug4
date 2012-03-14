@@ -62,6 +62,7 @@ int main(int argc, char **argv ) {
 		fprintf(stdout, "\n");
 		free(tasks_per_process);
 	}
+	fflush(stdout);
 	MPI_Finalize();
 	return 0;
 }
@@ -75,30 +76,36 @@ double farmer(int numprocs) {
 	double initial[2] = { A, B };
 	double answer = 0;
 
-	/*fprintf(stdout, "Farmer sending: { %f, %f }\n", initial[0], initial[1]);*/
 	MPI_Send(initial, 2, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+
+	// Babysit the tasks until we have enough for each worker.
+	/*int i;*/
+	/*for (i = 2; i < numprocs; i++) {*/
+		/*double data[2];*/
+		/*MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);*/
+		/*MPI_Send(data, 2, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);*/
+	/*}*/
+	/*fprintf(stdout, "Baby sat.");*/
 
 	while(1) {
 		double data[2];
 
 		int flag = 0;
-		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, NULL);
+		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 
 		if (flag) {
-			MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-
 			if (status.MPI_TAG == TAG_NEW_TASK) {
+				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				push(data, s);
+				tasks_per_process[status.MPI_SOURCE]++;
 
-				MPI_Recv(data, 2, MPI_DOUBLE, status.MPI_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-				/*fprintf(stdout, "Farmer getting: { %f, %f } %d\n", data[0], data[1], status.MPI_TAG);*/
+				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				push(data, s);
+				tasks_per_process[status.MPI_SOURCE]++;
 
-				tasks_per_process[status.MPI_SOURCE] += 2;
-
-				double* new_data = pop(s);
-				MPI_Send(new_data, 2, MPI_DOUBLE, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				numworking--;
 			} else {
+				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				// Add our new answer to the sum.
 				answer += data[0];
 
@@ -106,7 +113,8 @@ double farmer(int numprocs) {
 				numworking--;
 			}
 		}
-		else if (!flag && !is_empty(s) && numworking != 1)
+
+		if (!is_empty(s))
 		{
 			double* new_data = pop(s);
 			MPI_Send(new_data, 2, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
