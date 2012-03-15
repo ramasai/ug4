@@ -1012,7 +1012,7 @@ public class PlanBuilder {
                       half > 10 ? half : 10);
                   ExternalSort newRight = new ExternalSort(right, sm,
                       rightSlots, half > 10 ? half : 10);
-                  // // create the merge operation and combine it
+                  // create the merge operation and combine it
                   pred = createJoinPredicate(newLeft, newRight, join);
                   return new MergeJoin(newLeft, newRight, sm, 
                                        leftSlots[0], rightSlots[0], pred);

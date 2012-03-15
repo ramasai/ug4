@@ -108,6 +108,7 @@ public class MergeJoin extends NestedLoopsJoin {
         //
         ////////////////////////////////////////////
         outputFile = FileUtil.createTempFileName();
+        getStorageManager().createFile(outputFile);
     } // initTempFiles()
 
     
@@ -126,17 +127,33 @@ public class MergeJoin extends NestedLoopsJoin {
 
             // store the left input
             String leftFile = FileUtil.createTempFileName();
-            System.err.println("Left file: " + leftFile);
             getStorageManager().createFile(leftFile);
             Relation leftRel = getInputOperator(LEFT).getOutputRelation();
-            RelationIOManager left = new RelationIOManager(getStorageManager(), leftRel, leftFile);
-            
+            RelationIOManager left =
+                new RelationIOManager(getStorageManager(), leftRel, leftFile);
+            boolean done = false;
+            while (! done) {
+                Tuple tuple = getInputOperator(LEFT).getNext();
+                if (tuple != null) {
+                    done = (tuple instanceof EndOfStreamTuple);
+                    if (! done) left.insertTuple(tuple);
+                }
+            }
+
             // store the right input
             String rightFile = FileUtil.createTempFileName();
             getStorageManager().createFile(rightFile);
-            System.err.println("Right file: " + rightFile);
             Relation rightRel = getInputOperator(RIGHT).getOutputRelation();
-            RelationIOManager right = new RelationIOManager(getStorageManager(), rightRel, rightFile);
+            RelationIOManager right = 
+                new RelationIOManager(getStorageManager(), rightRel, rightFile);
+            done = false;
+            while (! done) {
+                Tuple tuple = getInputOperator(RIGHT).getNext();
+                if (tuple != null) {
+                    done = (tuple instanceof EndOfStreamTuple);
+                    if (! done) right.insertTuple(tuple);
+                }
+            }
 
             Iterator<Tuple> R = left.tuples().iterator();
             Iterator<Tuple> S = right.tuples().iterator();
@@ -159,17 +176,26 @@ public class MergeJoin extends NestedLoopsJoin {
                 while (tuplesAreEqual(r, gs)) {
                     s = gs;
 
-                    while (tuplesAreEqual(r, s) && S.hasNext()) {
+                    while (tuplesAreEqual(r, s)) {
                         Tuple newTuple = combineTuples(r, s);
                         outputMan.insertTuple(newTuple);
-                        s = S.next();
+
+                        if (S.hasNext())
+                        {
+                            s = S.next();
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
 
-                    r = R.next();
-                }
+                    if (!R.hasNext())
+                        break;
 
-                if (gs != null)
+                    r = R.next();
                     gs = s;
+                }
             }
 
             // open the iterator over the output
