@@ -65,19 +65,16 @@ int main(int argc, char **argv ) {
 		fprintf(stdout, "\n");
 		free(tasks_per_process);
 	}
-	fflush(stdout);
 	MPI_Finalize();
 	return 0;
 }
 
 double farmer(int numprocs) {
 	int numworking = 0;	
+	double answer = 0;
 
 	stack *s = new_stack();
 	double initial[2] = { A, B };
-	double answer = 0;
-
-	/*MPI_Send(initial, 2, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);*/
 	push(initial, s);
 
 	while(1) {
@@ -89,56 +86,51 @@ double farmer(int numprocs) {
 
 		if (flag) {
 			if (status.MPI_TAG == TAG_NEW_TASK) {
+				// Get the new tasks.
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, TAG_NEW_TASK, MPI_COMM_WORLD, &status);
-				fprintf(stderr, "Farmer: Got new task { %f, %f (%d) } from %d.\n", data[0], data[1], status.MPI_TAG, status.MPI_SOURCE);
 				push(data, s);
 				tasks_per_process[status.MPI_SOURCE]++;
 
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, TAG_NEW_TASK, MPI_COMM_WORLD, &status);
-				fprintf(stderr, "Farmer: Got new task { %f, %f (%d) } from %d.\n", data[0], data[1], status.MPI_TAG, status.MPI_SOURCE);
 				push(data, s);
 				tasks_per_process[status.MPI_SOURCE]++;
 
 				numworking--;
 			} else if (status.MPI_TAG == TAG_RESULT) {
+				// Get the answer
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, TAG_RESULT, MPI_COMM_WORLD, &status);
-				fprintf(stderr, "Farmer: Got result { %f (%d) } from %d.\n", data[0], status.MPI_TAG, status.MPI_SOURCE);
 
 				// Add our new answer to the sum.
 				answer += data[0];
-				/*fprintf(stdout, "New Answer: %f\n", answer);*/
 
 				numworking--;
 			} else if (status.MPI_TAG == TAG_REQUEST_TASK) {
+				// If a process is requesting a task then we check if we have any to give before sending
+				// an appropriate message back.
 				MPI_Recv(data, 2, MPI_DOUBLE, MPI_ANY_SOURCE, TAG_REQUEST_TASK, MPI_COMM_WORLD, &status);
-				fprintf(stderr, "Farmer: Got task request (%d) from %d.\n", status.MPI_TAG, status.MPI_SOURCE);
 
 				if (!is_empty(s)) {
+					// Send the task.
 					double* new_data = pop(s);
 					MPI_Send(new_data, 2, MPI_DOUBLE, status.MPI_SOURCE, TAG_TASK, MPI_COMM_WORLD);
-					fprintf(stdout, "Farmer: Sent task { %f, %f } to %d.\n", new_data[0], new_data[1], status.MPI_SOURCE);
 
 					numworking++;
 				} else {
+					// Send back a message saying no tasks.
 					MPI_Send(data, 2, MPI_DOUBLE, status.MPI_SOURCE, TAG_NO_TASK, MPI_COMM_WORLD);
-					fprintf(stderr, "Farmer: Sent no task message to %d.\n", status.MPI_SOURCE);
 				}
 			}
 		}
 
-		/*sleep(1);*/
-
 		// Are we done?
 		int done = (numworking == 0 && is_empty(s));
-		/*fprintf(stdout, "Done: %d\n", done);*/
-		/*fprintf(stdout, "Working: %d\n", numworking);*/
 		if (done) {
+			// Kill all of the workers.
 			int i;
 			double kill[2];
 
 			for (i = 1; i < numprocs; i++) {
 				MPI_Send(kill, 2, MPI_DOUBLE, i, TAG_KILL, MPI_COMM_WORLD);
-				fprintf(stderr, "Farmer: Sent kill message to %d.\n", status.MPI_SOURCE);
 			}
 
 			free_stack(s);
@@ -157,7 +149,6 @@ void worker(int mypid) {
 		// Get the task.
 		MPI_Send(empty_data, 2, MPI_DOUBLE, 0, TAG_REQUEST_TASK, MPI_COMM_WORLD);
 		MPI_Recv(data, 2, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		fprintf(stderr, "Worker %d: Got { %f, %f (%d) } from %d.\n", mypid, data[0], data[1], status.MPI_TAG, status.MPI_SOURCE);
 		
 		// If the task tells us to die: die.
 		if (status.MPI_TAG == TAG_KILL) { break; }
@@ -185,12 +176,10 @@ void worker(int mypid) {
 			data[0] = left;
 			data[1] = mid;
 			MPI_Send(data, 2, MPI_DOUBLE, 0, TAG_NEW_TASK, MPI_COMM_WORLD);
-			fprintf(stderr, "Worker %d: Sent { %f, %f } to %d.\n", mypid, data[0], data[1], 0);
 
 			data[0] = mid;
 			data[1] = right;
 			MPI_Send(data, 2, MPI_DOUBLE, 0, TAG_NEW_TASK, MPI_COMM_WORLD);
-			fprintf(stderr, "Worker %d: Sent { %f, %f } to %d.\n", mypid, data[0], data[1], 0);
 		} else {
 			// Send the answer back to the farmer.
 			data[0] = larea + rarea;
