@@ -1,3 +1,71 @@
+/**
+ * aquadPartA.c
+ * 0824586
+ *
+ * Only three different MPI functions were used in the implementation of this
+ * answer: MPI_Send, MPI_Recv, and MPI_Iprobe. The first two are obvious in
+ * their usage. However, MPI_Iprobe is used to grab the presence and tag of an
+ * incoming message. The main purpose of this is to not block if there is no
+ * message (which may occur at the end of the computation) causing the program
+ * not to exit.
+ *
+ * Farmer
+ * ------
+ * 
+ * The farmer initially pushes the first task onto the stack before entering
+ * the main work loop. The first thing it does in the loop is probe the
+ * MPI_COMM_WORLD communication channel for any new messages. This call is used
+ * in order to find the tag of the message without blocking and taking the sent
+ * message out of the buffer. If a message is detected then the program checks
+ * the tag of the incoming message and then takes different steps depending on
+ * the value:
+ *
+ * 	 TAG_NEW_TASK - This tag is sent by the worker when it is delivering two
+ * 	 new tasks back to the farmer. The two new tasks are removed from the
+ * 	 message buffer before being pushed on to the stack. Some housekeeping
+ * 	 tasks are then performed such as decrementing the count of the number of
+ * 	 working workers and incrementing the task counts for the process.
+ *
+ *   TAG_RESULT - This tag is sent by the worker if it is sending a final
+ *   result back to the farmer. The final result is taken from the message
+ *   buffer before being added onto the final answer sum. The count of working
+ *   workers is then decremented.
+ *
+ *   TAG_REQUEST_TASK - This tag is sent by the worker if it needs more work.
+ *   The farmer removes the message from the buffer before checking if there is
+ *   any work on the stack. If there is then this is popped and then sent back
+ *   to the worker with the tag TAG_TASK before the number of working workers
+ *   is incremented and if there isn't any work to do then it is sent a message
+ *   with tag TAG_NO_TASK.
+ *
+ * After this is done (or no message was found in the probe call) then we check
+ * to see if we are done with the overall task. This is done by checking to see
+ * if there are no workers working *and* if there is no more work to do on the
+ * stack. If we aren't done then we start the loop all over again. However, if
+ * we are done then a message is sent to all workers to die (with the tag
+ * TAG_KILL) before we return the answer to the caller.
+ *
+ * Worker
+ * ------
+ *
+ * The worker is significantly simpler in its operation. It enters the main
+ * work loop immediately and then asks the farmer for some work before
+ * performing a blocking receive until it gets an answer back (a blocking
+ * operation was chosen as there is no point continuing until we have something
+ * to act upon). The worker observes the tag of the message it receives and
+ * then acts in different ways depending on its value:
+ *
+ *   TAG_KILL - The worker exits by returning from the function.
+ *
+ *   TAG_NO_TASK - The worker restarts its main work loop again.
+ *
+ *   Any other tag (TAG_TASK) - The worker performs the calculation using the
+ *   task descriptor that it has received. If the value is accurate enough then
+ *   the result is accurate enough then the result is sent back to the farmer
+ *   with the tag TAG_RESULT. If the answer is not accurate enough then two new
+ *   task descriptors are sent back to the farmer with the tag TAG_NEW_TASK.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

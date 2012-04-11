@@ -1,3 +1,25 @@
+/**
+ * aquadPartB.c
+ * 0824586
+ *
+ * This task follows a very similar pattern to part A. However, a worker does
+ * not send a new task descriptor back to the farmer. Instead, the worker
+ * continues working on the task until it is 'complete' and only sends the
+ * final result back to the farmer.
+ *
+ * The farmer creates an array of task descriptors to give out to their
+ * corresponding workers. The worker then enters a similar main work loop to
+ * part A. The message buffer is probed for the message type and presence
+ * before either summing the received answer or sending out the pre-generated
+ * task descriptors. If no more workers are working then we exit the loop and
+ * return the answer.
+ *
+ * The farmer again asks for a task before blocking until it receives one. Upon
+ * receiving one it performs the computation recursively until the required
+ * level of accuracy is achieved a message  with the result is sent back to the
+ * waiting farmer.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -81,7 +103,9 @@ double farmer(int numprocs) {
 		double bottom = i;
 		double top = bottom + (B-A)/(numprocs-1);
 
-		tasks[++task][0] = bottom;
+		task++;
+
+		tasks[task][0] = bottom;
 		tasks[task][1] = top;
 
 		i = top;
