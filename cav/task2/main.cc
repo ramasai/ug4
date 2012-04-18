@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
+
 #include <GL/glut.h>
+
 #include "main.h"
 
 int nRows = 480;
@@ -37,7 +39,6 @@ void Volume::load(char * filename)
 	unsigned char *scan_ptr = NULL;
 
 	ifstream fin;
-	ofstream fout("test");
 
 	fin.open(filename);
 
@@ -50,14 +51,13 @@ void Volume::load(char * filename)
 
 	fin >> size[2] >> size[0] >> size[1];
 
-
 	plane_size = size[2] * size[0];
 	volume_size = plane_size * size[1];
 
 	_volume = new unsigned short * [size[1]]; 
 	for (int i = 0; i < size[1];i++) 
 	{
-		_volume[i] = new unsigned short [plane_size]; 
+		_volume[i] = new unsigned short[plane_size]; 
 	}
 
 	// Read In Data Plane By Plane
@@ -68,7 +68,6 @@ void Volume::load(char * filename)
 			for (int j = 0; j < size[0]; j++) {
 				_volume[size[1]-1 - y_counter][i*size[2] + j]=fin.get();
 				fin >>_volume[size[1]-1 - y_counter][i*size[2] + j];
-	//			fout.put(_volume[size[1]-1 - y_counter][i*size[2] + j]);
 			}
 		}
 	}
@@ -77,45 +76,44 @@ void Volume::load(char * filename)
 	_size[1] = size[1];
 	_size[2] = size[2];
 
-	cerr <<"Read " << volume_size << " points" << endl;
+	cerr <<"Read " << volume_size << " points." << endl;
 }
-
-
-
 
 void myDisplay()
 {
-	glClear(GL_COLOR_BUFFER_BIT); // Clear OpenGL Window
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	Vector3f v1,v2,v3;
 
 	Vector3f N;
-	int threshold = tmpf * 255.f;  // if you change this value and you will see different contours  
- 
+	// if you change this value and you will see different contours  
+	int threshold = tmpf * 270.0f;
+
 	for (int xi = 1 ; xi < vol.sizex()-1 ; xi++)  
 	{
 		for (int yi = 1 ; yi < vol.sizey()-1 ; yi++)  
 		{
-			//cout << "(x,y)="<< xi << " " << yi << ":"; 
+			//cerr << "(x, y): ("<< xi << ", " << yi << ")" << endl; 
+
 			for (int zi = 1 ; zi < vol.sizez()-1 ; zi++) 
 			{
-
 				if (vol.volume(xi,yi,zi) > threshold) 
 				{
+					float colour = (float)vol.volume(xi, yi, zi) / 255.f;
+					glColor3f(colour, colour, colour);
 
-					float tmpc= (float)vol.volume(xi,yi,zi)/255.f;
+					glRecti(xi - vol.sizex() / 2,
+							2 * yi -vol.sizey(),
+							xi - vol.sizex() / 2 + 1,
+							2 * yi - vol.sizey() + 2);
 
-					glColor3f(tmpc,tmpc,tmpc);
-
-					glRecti(xi-vol.sizex()/2 , 2*yi -vol.sizey(),
-						xi-vol.sizex()/2+1, 2*yi-vol.sizey()+2);
 					break;
 				}
 			}	
 		}
 	}
 
-	glFlush();// Output everything
+	glFlush();
 }
 
 
@@ -133,9 +131,9 @@ int main(int argc, char **argv)
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(nRows, nCols);
-	glutCreateWindow("SimpleExample");
+	glutCreateWindow("Volume Rendering - 0824586");
 
 	gluOrtho2D(-nRows/2, nRows/2, -(float)nCols/2,  (float)nCols/2);
-	glutDisplayFunc(myDisplay);// Callback function
-	glutMainLoop();// Display everything and wait
+	glutDisplayFunc(myDisplay);
+	glutMainLoop();
 };
