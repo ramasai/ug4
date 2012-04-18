@@ -20,4 +20,4 @@ clean:
 	rm -f *.o main
 
 run:
-	./main head
+	./main head.vol
