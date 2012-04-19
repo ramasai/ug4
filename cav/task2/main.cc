@@ -7,18 +7,8 @@
 
 int nRows = 480;
 int nCols = 480; 
+
 Volume vol;
-
-static int spin = 0;
-static int spin2 = 0;
-static int begin;
-static int begin2;
-
-int button_id; 
-int state_id;
-
-Vector3f L(0,0,1);
-Vector3f V(0,0,1);
 
 #define SKIN_VAL 0.2f
 #define BONE_VAL 0.5f
