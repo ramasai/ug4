@@ -15,6 +15,9 @@ Volume vol;
 
 float tmpf = SKIN_VAL;
 
+float SKIN_TRANS = 0.05f;
+float BONE_TRANS = 1.0f;
+
 void Volume::load(char * filename)
 {  
 	int   temp;
@@ -111,22 +114,31 @@ void myDisplay()
 				bool is_bone = volume > bone_threshold;
 
 				float a = 0.0f;
-				float e = 0.0f;
+
+				float r_e = 0.0f;
+				float g_e = 0.0f;
+				float b_e = 0.0f;
 
 				if (is_bone) {
-					e = (float)volume / 255.f;
-					a = 1.0f;
+					r_e = (float)volume / 255.f /2;
+					g_e = (float)volume / 255.f /2;
+					b_e = (float)volume / 255.f;
+
+					a = BONE_TRANS;
 				} else if (is_skin) {
-					e = (float)volume / 255.f;
-					a = 0.03f;
+					r_e = (float)volume / 255.f;
+					g_e = (float)volume / 255.f / 2;
+					b_e = (float)volume / 255.f / 2;
+
+					a = SKIN_TRANS;
 				}
 
 				// i = contents of the frame buffer
 				// e = light from the cell
 				// a = object opacity
-				r_i = (a * e) + (1-a) * r_i;
-				g_i = (a * e) + (1-a) * g_i;
-				b_i = (a * e) + (1-a) * b_i;
+				r_i = (a * r_e) + (1-a) * r_i;
+				g_i = (a * g_e) + (1-a) * g_i;
+				b_i = (a * b_e) + (1-a) * b_i;
 			}	
 
 			drawBox(xi, yi, r_i, g_i, b_i);
@@ -138,12 +150,21 @@ void myDisplay()
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
-		case 32:
-			if (tmpf == BONE_VAL) {
-				tmpf = SKIN_VAL;
-			} else {
-				tmpf = BONE_VAL;
-			}
+		case 'q':
+			SKIN_TRANS = min(max(SKIN_TRANS += 0.05, 0.0f), 1.0f);
+			printf("Increasing skin opacity... (%f)\n", SKIN_TRANS);
+			break;
+		case 'a':
+			SKIN_TRANS = min(max(SKIN_TRANS -= 0.05, 0.0f), 1.0f);
+			printf("Decreasing skin opacity... (%f)\n", SKIN_TRANS);
+			break;
+		case 'w':
+			BONE_TRANS = min(max(BONE_TRANS += 0.05, 0.0f), 1.0f);
+			printf("Increasing bone opacity... (%f)\n", BONE_TRANS);
+			break;
+		case 's':
+			BONE_TRANS = min(max(BONE_TRANS -= 0.05, 0.0f), 1.0f);
+			printf("Decreasing bone opacity... (%f)\n", BONE_TRANS);
 			break;
 	}
 
