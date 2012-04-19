@@ -72,37 +72,64 @@ void Volume::load(char * filename)
 	cerr <<"Read " << volume_size << " points." << endl;
 }
 
+void drawBox(int x, int y, float r, float b, float g) {
+	glColor3f(r, g, b);
+
+	glRecti(x - vol.sizex() / 2,
+			2 * y -vol.sizey(),
+			x - vol.sizex() / 2 + 1,
+			2 * y - vol.sizey() + 2);
+}
+
+void drawBox(int x, int y, float color) {
+	drawBox(x, y, color, color, color);
+}
+
 void myDisplay()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	Vector3f v1,v2,v3;
-
 	Vector3f N;
+
 	// if you change this value and you will see different contours  
-	int threshold = tmpf * 255.0f;
+	int skin_threshold = SKIN_VAL * 255.0f;
+	int bone_threshold = BONE_VAL * 255.0f;
 
 	for (int xi = 1 ; xi < vol.sizex()-1 ; xi++)  
 	{
 		for (int yi = 1 ; yi < vol.sizey()-1 ; yi++)  
 		{
-			//cerr << "(x, y): ("<< xi << ", " << yi << ")" << endl; 
+			float r_i = 0.0f;
+			float g_i = 0.0f;
+			float b_i = 0.0f;
 
-			for (int zi = 1 ; zi < vol.sizez()-1 ; zi++) 
+			for (int zi = vol.sizez()-2; zi >= 0; zi--) 
 			{
-				if (vol.volume(xi,yi,zi) > threshold) 
-				{
-					float colour = (float)vol.volume(xi, yi, zi) / 255.f;
-					glColor3f(colour, colour, colour);
+				int volume = vol.volume(xi, yi, zi);
+				bool is_skin = volume > skin_threshold;
+				bool is_bone = volume > bone_threshold;
 
-					glRecti(xi - vol.sizex() / 2,
-							2 * yi -vol.sizey(),
-							xi - vol.sizex() / 2 + 1,
-							2 * yi - vol.sizey() + 2);
+				float a = 0.0f;
+				float e = 0.0f;
 
-					break;
+				if (is_bone) {
+					e = (float)volume / 255.f;
+					a = 1.0f;
+				} else if (is_skin) {
+					e = (float)volume / 255.f;
+					a = 0.03f;
 				}
+
+				// i = contents of the frame buffer
+				// e = light from the cell
+				// a = object opacity
+				r_i = (a * e) + (1-a) * r_i;
+				g_i = (a * e) + (1-a) * g_i;
+				b_i = (a * e) + (1-a) * b_i;
 			}	
+
+			drawBox(xi, yi, r_i, g_i, b_i);
 		}
 	}
 
