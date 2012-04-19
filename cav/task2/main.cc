@@ -19,8 +19,11 @@ int state_id;
 
 Vector3f L(0,0,1);
 Vector3f V(0,0,1);
-float tmpf = 0.2;
 
+#define SKIN_VAL 0.2f
+#define BONE_VAL 0.5f
+
+float tmpf = SKIN_VAL;
 
 void Volume::load(char * filename)
 {  
@@ -87,7 +90,7 @@ void myDisplay()
 
 	Vector3f N;
 	// if you change this value and you will see different contours  
-	int threshold = tmpf * 270.0f;
+	int threshold = tmpf * 255.0f;
 
 	for (int xi = 1 ; xi < vol.sizex()-1 ; xi++)  
 	{
@@ -116,6 +119,19 @@ void myDisplay()
 	glFlush();
 }
 
+void keyboard(unsigned char key, int x, int y) {
+	switch (key) {
+		case 32:
+			if (tmpf == BONE_VAL) {
+				tmpf = SKIN_VAL;
+			} else {
+				tmpf = BONE_VAL;
+			}
+			break;
+	}
+
+	glutPostRedisplay();
+}
 
 int main(int argc, char **argv)
 {
@@ -135,5 +151,6 @@ int main(int argc, char **argv)
 
 	gluOrtho2D(-nRows/2, nRows/2, -(float)nCols/2,  (float)nCols/2);
 	glutDisplayFunc(myDisplay);
+	glutKeyboardFunc(keyboard);
 	glutMainLoop();
 };
