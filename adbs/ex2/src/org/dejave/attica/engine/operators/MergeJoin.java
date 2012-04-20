@@ -5,7 +5,7 @@
  *
  * This is part of the attica project.  Any subsequent modification
  * of the file should retain this disclaimer.
- * 
+ *
  * University of Edinburgh, School of Informatics
  */
 package org.dejave.attica.engine.operators;
@@ -36,19 +36,19 @@ import org.dejave.attica.storage.FileUtil;
  * evaluated is an equi-join.
  *
  * @author sviglas
- * 
+ *
  */
 public class MergeJoin extends NestedLoopsJoin {
-	
+
     /** The name of the temporary file for the output. */
     private String outputFile;
-    
+
     /** The relation manager used for I/O. */
     private RelationIOManager outputMan;
-    
+
     /** The pointer to the left sort attribute. */
     private int leftSlot;
-	
+
     /** The pointer to the right sort attribute. */
     private int rightSlot;
 
@@ -57,10 +57,10 @@ public class MergeJoin extends NestedLoopsJoin {
 
     /** Reusable output list. */
     private List<Tuple> returnList;
-	
+
     /**
      * Constructs a new mergejoin operator.
-     * 
+     *
      * @param left the left input operator.
      * @param right the right input operator.
      * @param sm the storage manager.
@@ -70,18 +70,18 @@ public class MergeJoin extends NestedLoopsJoin {
      * @throws EngineException thrown whenever the operator cannot be
      * properly constructed.
      */
-    public MergeJoin(Operator left, 
+    public MergeJoin(Operator left,
                      Operator right,
                      StorageManager sm,
                      int leftSlot,
                      int rightSlot,
-                     Predicate predicate) 
+                     Predicate predicate)
 	throws EngineException {
-        
+
         super(left, right, sm, predicate);
         this.leftSlot = leftSlot;
         this.rightSlot = rightSlot;
-        returnList = new ArrayList<Tuple>(); 
+        returnList = new ArrayList<Tuple>();
         try {
             initTempFiles();
         }
@@ -96,7 +96,7 @@ public class MergeJoin extends NestedLoopsJoin {
 
     /**
      * Initialise the temporary files -- if necessary.
-     * 
+     *
      * @throws StorageManagerException thrown whenever the temporary
      * files cannot be initialised.
      */
@@ -111,17 +111,17 @@ public class MergeJoin extends NestedLoopsJoin {
         getStorageManager().createFile(outputFile);
     } // initTempFiles()
 
-    
+
     /**
      * Sets up this merge join operator.
-     * 
+     *
      * @throws EngineException thrown whenever there is something
      * wrong with setting this operator up.
      */
     @Override
     protected void setup() throws EngineException {
         try {
-            outputMan = new RelationIOManager(getStorageManager(), 
+            outputMan = new RelationIOManager(getStorageManager(),
                                  getOutputRelation(),
                                  outputFile);
 
@@ -144,7 +144,7 @@ public class MergeJoin extends NestedLoopsJoin {
             String rightFile = FileUtil.createTempFileName();
             getStorageManager().createFile(rightFile);
             Relation rightRel = getInputOperator(RIGHT).getOutputRelation();
-            RelationIOManager right = 
+            RelationIOManager right =
                 new RelationIOManager(getStorageManager(), rightRel, rightFile);
             done = false;
             while (! done) {
@@ -206,18 +206,18 @@ public class MergeJoin extends NestedLoopsJoin {
                                       ioe);
         }
         catch (StorageManagerException sme) {
-            EngineException ee = new EngineException("Could not store " + 
+            EngineException ee = new EngineException("Could not store " +
                                                      "intermediate relations " +
                                                      "to files.");
             ee.setStackTrace(sme.getStackTrace());
             throw ee;
         }
     } // setup()
-    
-    
+
+
     /**
      * Cleans up after the join.
-     * 
+     *
      * @throws EngineException whenever the operator cannot clean up
      * after itself.
      */
@@ -229,7 +229,7 @@ public class MergeJoin extends NestedLoopsJoin {
             // make sure you delete any temporary files
             //
             ////////////////////////////////////////////
-            
+
             getStorageManager().deleteFile(outputFile);
         }
         catch (StorageManagerException sme) {
@@ -247,7 +247,7 @@ public class MergeJoin extends NestedLoopsJoin {
 
     /**
      * Inner method to propagate a tuple.
-     * 
+     *
      * @return an array of resulting tuples.
      * @throws EngineException thrown whenever there is an error in
      * execution.
@@ -276,11 +276,11 @@ public class MergeJoin extends NestedLoopsJoin {
     @Override
     protected List<Tuple> innerProcessTuple(Tuple tuple, int inOp)
 	throws EngineException {
-        
+
         return new ArrayList<Tuple>();
     }  // innerProcessTuple()
 
-    
+
     /**
      * Textual representation
      */
