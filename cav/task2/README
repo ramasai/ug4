@@ -1,0 +1,23 @@
+# Computer Animation and Visualisation: Assignment 2
+
+Matriculation Number: 0824586
+
+## About
+
+Back-to-front ray casting is used to compute the colour of each rectangle in
+the image. Simple anti-aliasing is used in order to smooth the image.
+
+## Compiling & Running
+
+Make will compile and then run the program with the `head.vol` file.
+
+	$ make
+
+## Usage
+
+The program starts with some sane defaults to achieve a good looking image. The
+transparencies of the different densities can be changed with the following
+keys.
+
+q/a - Increase/decrease the opacity of the skin/muscle.
+w/s - Increase/decrease the opacity of the bone.
