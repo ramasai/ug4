@@ -1,0 +1,6 @@
+#compiling the demo program:
+
+g++ -o demo4 demo4.cc -lglut -lGLU -lGL
+
+# running the program
+./demo4 head 
