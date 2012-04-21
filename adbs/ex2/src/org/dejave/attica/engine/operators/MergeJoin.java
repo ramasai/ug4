@@ -125,6 +125,8 @@ public class MergeJoin extends NestedLoopsJoin {
                                  getOutputRelation(),
                                  outputFile);
 
+			System.err.println();
+
             // store the left input
             String leftFile = FileUtil.createTempFileName();
             getStorageManager().createFile(leftFile);
@@ -156,11 +158,12 @@ public class MergeJoin extends NestedLoopsJoin {
             }
 
             Iterator<Tuple> R = left.tuples().iterator();
+			Tuple r = R.next();
+
             Iterator<Tuple> S = right.tuples().iterator();
+			Tuple gs = S.next();
 
             while(R.hasNext() && S.hasNext()) {
-                Tuple r = R.next();
-                Tuple gs = S.next();
 
                 while (r.getValue(leftSlot).compareTo(gs.getValue(rightSlot)) < 0
                     && R.hasNext()) {
@@ -173,8 +176,9 @@ public class MergeJoin extends NestedLoopsJoin {
                 }
 
                 Tuple s = null;
+				ArrayList<Tuple> buffer = new ArrayList<Tuple>();
                 while (tuplesAreEqual(r, gs)) {
-                    s = gs;
+					s = gs;
 
                     while (tuplesAreEqual(r, s)) {
                         Tuple newTuple = combineTuples(r, s);
@@ -182,6 +186,7 @@ public class MergeJoin extends NestedLoopsJoin {
 
                         if (S.hasNext())
                         {
+							buffer.add(s);
                             s = S.next();
                         }
                         else
@@ -193,9 +198,20 @@ public class MergeJoin extends NestedLoopsJoin {
                     if (!R.hasNext())
                         break;
 
+					Tuple last = r;
                     r = R.next();
+
+					while (tuplesAreEqual(last, r)) {
+						for(Tuple bufferTuple : buffer) {
+							outputMan.insertTuple(combineTuples(bufferTuple, r));
+						}
+
+						r = R.next();
+					}
+
                     gs = s;
                 }
+				buffer.clear();
             }
 
             // open the iterator over the output
