@@ -157,19 +157,23 @@ public class MergeJoin extends NestedLoopsJoin {
                 }
             }
 
+			// Get the two iterators and preload them with the first values.
             Iterator<Tuple> R = left.tuples().iterator();
 			Tuple r = R.next();
 
             Iterator<Tuple> S = right.tuples().iterator();
 			Tuple gs = S.next();
 
+			// Let's get merging...
             while(R.hasNext() && S.hasNext()) {
 
+				// Move the left interator up to the correct place.
                 while (r.getValue(leftSlot).compareTo(gs.getValue(rightSlot)) < 0
                     && R.hasNext()) {
                     r = R.next();
                 }
 
+				// Move the right interator up to the correct place.
                 while (r.getValue(leftSlot).compareTo(gs.getValue(rightSlot)) > 0
                     && S.hasNext()) {
                     gs = S.next();
@@ -177,6 +181,8 @@ public class MergeJoin extends NestedLoopsJoin {
 
                 Tuple s = null;
 				ArrayList<Tuple> buffer = new ArrayList<Tuple>();
+
+				// While they are equal, keep merging them.
                 while (tuplesAreEqual(r, gs)) {
 					s = gs;
 
@@ -198,6 +204,7 @@ public class MergeJoin extends NestedLoopsJoin {
                     if (!R.hasNext())
                         break;
 
+					// Rewind the right values and re-output them.
 					Tuple last = r;
                     r = R.next();
 
@@ -206,6 +213,8 @@ public class MergeJoin extends NestedLoopsJoin {
 							outputMan.insertTuple(combineTuples(bufferTuple, r));
 						}
 
+						if (!R.hasNext())
+							break;
 						r = R.next();
 					}
 
@@ -256,6 +265,13 @@ public class MergeJoin extends NestedLoopsJoin {
         }
     } // cleanup()
 
+	/**
+	 * Check if two tuples are equal.
+	 *
+	 * @param leftTuple The left tuple to compare.
+	 * @param rightTuple The right tuple to compare.
+	 * @return whether or not two tuples are equal.
+	 */
     private boolean tuplesAreEqual(Tuple leftTuple, Tuple rightTuple) {
         PredicateTupleInserter.insertTuples(leftTuple, rightTuple, getPredicate());
         return PredicateEvaluator.evaluate(getPredicate());
