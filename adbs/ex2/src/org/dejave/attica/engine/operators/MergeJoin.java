@@ -187,6 +187,7 @@ public class MergeJoin extends NestedLoopsJoin {
                 while (tuplesAreEqual(r, gs)) {
 					s = gs;
 
+					// Create the file used to store the reqind values.
 					String rewindFile = FileUtil.createTempFileName();
 					rewindList.add(rewindFile);
 					getStorageManager().createFile(rewindFile);
@@ -208,6 +209,7 @@ public class MergeJoin extends NestedLoopsJoin {
                         }
                     }
 
+					// If the left hand side is at the end of the input then exit.
                     if (!R.hasNext())
                         break;
 
@@ -215,6 +217,8 @@ public class MergeJoin extends NestedLoopsJoin {
 					Tuple last = r;
                     r = R.next();
 
+					// While the left hand side is still the same then keep
+					// looping over them and adding them.
 					while (tuplesAreEqual(last, r)) {
 						for(Tuple bufferTuple : rewindMan.tuples()) {
 							outputMan.insertTuple(combineTuples(bufferTuple, r));
