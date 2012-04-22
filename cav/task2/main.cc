@@ -10,13 +10,14 @@ int nCols = 480;
 
 Volume vol;
 
-#define SKIN_VAL 0.2f
-#define BONE_VAL 0.5f
-
-float tmpf = SKIN_VAL;
+float SKIN_VAL = 0.2f;
+float BONE_VAL = 0.5f;
 
 float SKIN_TRANS = 0.05f;
 float BONE_TRANS = 1.0f;
+
+float tmpf = SKIN_VAL;
+bool anti_alias = false;
 
 void Volume::load(char * filename)
 {  
@@ -92,8 +93,7 @@ void myDisplay()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	Vector3f v1,v2,v3;
-	Vector3f N;
+	float screenBuffer[3][vol.sizex()][vol.sizey()];
 
 	// if you change this value and you will see different contours  
 	int skin_threshold = SKIN_VAL * 255.0f;
@@ -141,7 +141,29 @@ void myDisplay()
 				b_i = (a * b_e) + (1-a) * b_i;
 			}	
 
-			drawBox(xi, yi, r_i, g_i, b_i);
+			if (anti_alias) {
+				screenBuffer[0][xi-1][yi-1] = r_i;
+				screenBuffer[1][xi-1][yi-1] = g_i;
+				screenBuffer[2][xi-1][yi-1] = b_i;
+			} else {
+				drawBox(xi, yi, r_i, g_i, b_i);
+			} 
+		}
+	}
+
+	// Antialiasing
+	if (anti_alias) {
+		for (int i = 0 ; i < vol.sizex()-30 ; i++) {
+			for (int j = 0 ; j < vol.sizey()-1 ; j++) {
+				float averageR = (screenBuffer[0][i][j]*4 + screenBuffer[0][i+1][j] +
+					screenBuffer[0][i][j+1] + screenBuffer[0][i+1][j+1]) / 7;
+				float averageG = (screenBuffer[1][i][j]*4 + screenBuffer[1][i+1][j] +
+					screenBuffer[1][i][j+1] + screenBuffer[1][i+1][j+1]) / 7;
+				float averageB = (screenBuffer[2][i][j]*4 + screenBuffer[2][i+1][j] +
+					screenBuffer[2][i][j+1] + screenBuffer[2][i+1][j+1]) / 7;
+
+				drawBox(i+1, j+1, averageR, averageG, averageB);
+			}
 		}
 	}
 
@@ -166,6 +188,8 @@ void keyboard(unsigned char key, int x, int y) {
 			BONE_TRANS = min(max(BONE_TRANS -= 0.05, 0.0f), 1.0f);
 			printf("Decreasing bone opacity... (%f)\n", BONE_TRANS);
 			break;
+		case ' ':
+			anti_alias = !anti_alias;
 	}
 
 	glutPostRedisplay();
