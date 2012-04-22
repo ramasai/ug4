@@ -1,0 +1,5 @@
+# Advanced Database Systems: Practical Exercise 2 - Merge Join
+
+A simple (hopefully correct) version of the Merge Join algorithm. It stores
+values that may need to be used with subsequent left hand side values in a file
+rather than modifying the iterator or using an in-memory store.
