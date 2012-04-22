@@ -58,6 +58,9 @@ public class MergeJoin extends NestedLoopsJoin {
     /** Reusable output list. */
     private List<Tuple> returnList;
 
+    /** List of filenames used for rewinding the input stream. */
+    private List<String> rewindList;
+
     /**
      * Constructs a new mergejoin operator.
      *
@@ -82,6 +85,7 @@ public class MergeJoin extends NestedLoopsJoin {
         this.leftSlot = leftSlot;
         this.rightSlot = rightSlot;
         returnList = new ArrayList<Tuple>();
+        rewindList = new ArrayList<String>();
         try {
             initTempFiles();
         }
@@ -124,8 +128,6 @@ public class MergeJoin extends NestedLoopsJoin {
             outputMan = new RelationIOManager(getStorageManager(),
                                  getOutputRelation(),
                                  outputFile);
-
-			System.err.println();
 
             // store the left input
             String leftFile = FileUtil.createTempFileName();
@@ -180,19 +182,24 @@ public class MergeJoin extends NestedLoopsJoin {
                 }
 
                 Tuple s = null;
-				ArrayList<Tuple> buffer = new ArrayList<Tuple>();
 
 				// While they are equal, keep merging them.
                 while (tuplesAreEqual(r, gs)) {
 					s = gs;
 
+					String rewindFile = FileUtil.createTempFileName();
+					rewindList.add(rewindFile);
+					getStorageManager().createFile(rewindFile);
+					RelationIOManager rewindMan =
+						new RelationIOManager(getStorageManager(), rightRel, rewindFile);
+
                     while (tuplesAreEqual(r, s)) {
                         Tuple newTuple = combineTuples(r, s);
                         outputMan.insertTuple(newTuple);
 
+						rewindMan.insertTuple(s);
                         if (S.hasNext())
                         {
-							buffer.add(s);
                             s = S.next();
                         }
                         else
@@ -209,7 +216,7 @@ public class MergeJoin extends NestedLoopsJoin {
                     r = R.next();
 
 					while (tuplesAreEqual(last, r)) {
-						for(Tuple bufferTuple : buffer) {
+						for(Tuple bufferTuple : rewindMan.tuples()) {
 							outputMan.insertTuple(combineTuples(bufferTuple, r));
 						}
 
@@ -220,7 +227,6 @@ public class MergeJoin extends NestedLoopsJoin {
 
                     gs = s;
                 }
-				buffer.clear();
             }
 
             // open the iterator over the output
@@ -255,6 +261,9 @@ public class MergeJoin extends NestedLoopsJoin {
             //
             ////////////////////////////////////////////
 
+			for(String fileName : rewindList) {
+				getStorageManager().deleteFile(fileName);
+			}
             getStorageManager().deleteFile(outputFile);
         }
         catch (StorageManagerException sme) {
